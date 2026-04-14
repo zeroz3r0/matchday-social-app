@@ -1,0 +1,40 @@
+{
+  "name": "matchday-social-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Red social deportiva para gestionar partidos, ligas y torneos de futbol amateur",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "api:dev": "npm run dev -w apps/api",
+    "api:build": "npm run build -w apps/api",
+    "api:start": "npm run start -w apps/api",
+    "api:db:migrate": "npm run db:migrate -w apps/api",
+    "api:db:seed": "npm run db:seed -w apps/api",
+    "mobile:start": "npm run start -w apps/mobile",
+    "mobile:ios": "npm run ios -w apps/mobile",
+    "mobile:android": "npm run android -w apps/mobile",
+    "shared:build": "npm run build -w packages/shared",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf apps/*/dist apps/*/node_modules packages/*/dist packages/*/node_modules node_modules"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
+    "prettier": "^3.2.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

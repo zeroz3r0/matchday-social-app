@@ -1,0 +1,395 @@
+// ============================================================================
+// MATCHDAY SOCIAL — Database Schema (Prisma + PostGIS)
+// ============================================================================
+//
+// Relaciones clave:
+//   User -> ClubMember -> Club
+//   Match -> MatchTeam -> MatchPlayer (roster por partido)
+//   Match -> MatchStat -> StatConfirmation (validacion distribuida)
+//   Match -> PlayerVote / MvpResult (sistema de votacion)
+//   Competition -> LeagueStanding / TournamentBracket
+//
+// ============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+// ─── USERS ──────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt hash
+  nickname  String   @unique @db.VarChar(24)
+  avatarUrl String?  @map("avatar_url")
+  position  PlayerPosition
+  bio       String?  @db.VarChar(280)
+  latitude  Float?
+  longitude Float?
+  city      String?  @db.VarChar(100)
+  fcmToken  String?  @map("fcm_token")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  clubMemberships  ClubMember[]
+  createdMatches   Match[]           @relation("MatchCreator")
+  createdClubs     Club[]            @relation("ClubCreator")
+  createdCompetitions Competition[]  @relation("CompetitionCreator")
+  matchPlayers     MatchPlayer[]
+  submittedStats   MatchStat[]       @relation("StatSubmitter")
+  playerStats      MatchStat[]       @relation("StatPlayer")
+  confirmations    StatConfirmation[]
+  votesGiven       PlayerVote[]      @relation("VoteGiver")
+  votesReceived    PlayerVote[]      @relation("VoteReceiver")
+
+  @@map("users")
+}
+
+enum PlayerPosition {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+}
+
+// ─── CLUBS ──────────────────────────────────────────────────────────────────
+
+model Club {
+  id                 String   @id @default(cuid())
+  name               String   @unique @db.VarChar(40)
+  badgeUrl           String?  @map("badge_url")
+  description        String?  @db.VarChar(500)
+  preferredFormation String?  @map("preferred_formation") @db.VarChar(20)
+  createdById        String   @map("created_by_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy       User               @relation("ClubCreator", fields: [createdById], references: [id])
+  members         ClubMember[]
+  matchTeams      MatchTeam[]
+  leagueStandings LeagueStanding[]
+  homeBrackets    TournamentBracket[] @relation("BracketHome")
+  awayBrackets    TournamentBracket[] @relation("BracketAway")
+  winnerBrackets  TournamentBracket[] @relation("BracketWinner")
+  competitionClubs CompetitionClub[]
+
+  @@map("clubs")
+}
+
+model ClubMember {
+  id       String     @id @default(cuid())
+  clubId   String     @map("club_id")
+  userId   String     @map("user_id")
+  role     ClubRole   @default(PLAYER)
+  joinedAt DateTime   @default(now()) @map("joined_at")
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@map("club_members")
+}
+
+enum ClubRole {
+  ADMIN
+  CAPTAIN
+  PLAYER
+}
+
+// ─── MATCHES ────────────────────────────────────────────────────────────────
+
+model Match {
+  id              String      @id @default(cuid())
+  gameType        GameType    @map("game_type")
+  status          MatchStatus @default(SCHEDULED)
+  
+  // Location (inline — PostGIS point se maneja via raw SQL en migraciones)
+  locationName    String      @map("location_name") @db.VarChar(200)
+  locationAddress String      @map("location_address") @db.VarChar(500)
+  latitude        Float
+  longitude       Float
+  contactPhone    String?     @map("contact_phone") @db.VarChar(20)
+  googlePlaceId   String?     @map("google_place_id")
+  
+  scheduledAt     DateTime    @map("scheduled_at")
+  completedAt     DateTime?   @map("completed_at")
+  votingDeadline  DateTime?   @map("voting_deadline") // scheduledAt + 12h
+  
+  createdById     String      @map("created_by_id")
+  competitionId   String?     @map("competition_id")
+  
+  homeScore       Int?        @map("home_score")
+  awayScore       Int?        @map("away_score")
+  
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy    User          @relation("MatchCreator", fields: [createdById], references: [id])
+  competition  Competition?  @relation(fields: [competitionId], references: [id])
+  teams        MatchTeam[]
+  stats        MatchStat[]
+  votes        PlayerVote[]
+  mvpResult    MvpResult?
+  brackets     TournamentBracket[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([competitionId])
+  @@map("matches")
+}
+
+enum GameType {
+  F5
+  F7
+  F11
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+// ─── MATCH TEAMS (Roster por partido) ───────────────────────────────────────
+
+model MatchTeam {
+  id      String  @id @default(cuid())
+  matchId String  @map("match_id")
+  clubId  String? @map("club_id")  // null = partido informal
+  name    String  @db.VarChar(60)
+  isHome  Boolean @map("is_home")
+
+  // Relations
+  match   Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  club    Club?         @relation(fields: [clubId], references: [id])
+  players MatchPlayer[]
+
+  @@unique([matchId, isHome]) // Solo un equipo local y uno visitante por partido
+  @@map("match_teams")
+}
+
+model MatchPlayer {
+  id               String           @id @default(cuid())
+  matchTeamId      String           @map("match_team_id")
+  userId           String           @map("user_id")
+  position         PlayerPosition
+  invitationStatus InvitationStatus @default(PENDING) @map("invitation_status")
+
+  // Relations
+  matchTeam MatchTeam @relation(fields: [matchTeamId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchTeamId, userId])
+  @@map("match_players")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// ─── MATCH STATS & VALIDATION ───────────────────────────────────────────────
+
+model MatchStat {
+  id                    String               @id @default(cuid())
+  matchId               String               @map("match_id")
+  playerId              String               @map("player_id")
+  goals                 Int                  @default(0)
+  assists               Int                  @default(0)
+  yellowCards           Int                  @default(0) @map("yellow_cards")
+  redCards              Int                  @default(0) @map("red_cards")
+  submittedById         String               @map("submitted_by_id")
+  validationStatus      StatValidationStatus @default(PENDING) @map("validation_status")
+  confirmationsCount    Int                  @default(0) @map("confirmations_count")
+  requiredConfirmations Int                  @map("required_confirmations")
+  autoConfirmAt         DateTime             @map("auto_confirm_at") // submittedAt + 24h
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  match        Match              @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player       User               @relation("StatPlayer", fields: [playerId], references: [id])
+  submittedBy  User               @relation("StatSubmitter", fields: [submittedById], references: [id])
+  confirmations StatConfirmation[]
+
+  @@unique([matchId, playerId]) // Una entrada de stats por jugador por partido
+  @@index([validationStatus])
+  @@index([autoConfirmAt])
+  @@map("match_stats")
+}
+
+enum StatValidationStatus {
+  PENDING
+  CONFIRMED
+  DISPUTED
+  AUTO_CONFIRMED
+}
+
+model StatConfirmation {
+  id          String   @id @default(cuid())
+  matchStatId String   @map("match_stat_id")
+  userId      String   @map("user_id")
+  confirmed   Boolean
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  matchStat MatchStat @relation(fields: [matchStatId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([matchStatId, userId]) // Un usuario solo confirma una vez por stat
+  @@map("stat_confirmations")
+}
+
+// ─── VOTES & MVP ────────────────────────────────────────────────────────────
+
+model PlayerVote {
+  id             String   @id @default(cuid())
+  matchId        String   @map("match_id")
+  voterId        String   @map("voter_id")
+  targetPlayerId String   @map("target_player_id")
+  rating         Int      // 1-10
+  isMvpVote      Boolean  @default(false) @map("is_mvp_vote")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  match        Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  voter        User  @relation("VoteGiver", fields: [voterId], references: [id])
+  targetPlayer User  @relation("VoteReceiver", fields: [targetPlayerId], references: [id])
+
+  @@unique([matchId, voterId, targetPlayerId]) // Un voto por jugador por partido
+  @@index([matchId])
+  @@map("player_votes")
+}
+
+model MvpResult {
+  id             String   @id @default(cuid())
+  matchId        String   @unique @map("match_id")
+  homeTeamMvpId  String   @map("home_team_mvp_id")
+  awayTeamMvpId  String   @map("away_team_mvp_id")
+  globalMvpId    String   @map("global_mvp_id")
+  calculatedAt   DateTime @default(now()) @map("calculated_at")
+
+  // Relations
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("mvp_results")
+}
+
+// ─── COMPETITIONS (LIGAS & TORNEOS) ─────────────────────────────────────────
+
+model Competition {
+  id               String          @id @default(cuid())
+  name             String          @db.VarChar(60)
+  type             CompetitionType
+  gameType         GameType        @map("game_type")
+  description      String?         @db.VarChar(1000)
+  startDate        DateTime        @map("start_date")
+  endDate          DateTime?       @map("end_date")
+  maxPostponeDays  Int             @default(14) @map("max_postpone_days")
+  createdById      String          @map("created_by_id")
+  latitude         Float
+  longitude        Float
+  city             String          @db.VarChar(100)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy         User                @relation("CompetitionCreator", fields: [createdById], references: [id])
+  matches           Match[]
+  leagueStandings   LeagueStanding[]
+  tournamentBrackets TournamentBracket[]
+  clubs             CompetitionClub[]
+
+  @@index([type])
+  @@index([city])
+  @@map("competitions")
+}
+
+enum CompetitionType {
+  LEAGUE
+  TOURNAMENT
+}
+
+model CompetitionClub {
+  id            String   @id @default(cuid())
+  competitionId String   @map("competition_id")
+  clubId        String   @map("club_id")
+  registeredAt  DateTime @default(now()) @map("registered_at")
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([competitionId, clubId])
+  @@map("competition_clubs")
+}
+
+// ─── LEAGUE STANDINGS ───────────────────────────────────────────────────────
+
+model LeagueStanding {
+  id            String @id @default(cuid())
+  competitionId String @map("competition_id")
+  clubId        String @map("club_id")
+  played        Int    @default(0)
+  won           Int    @default(0)
+  drawn         Int    @default(0)
+  lost          Int    @default(0)
+  goalsFor      Int    @default(0) @map("goals_for")
+  goalsAgainst  Int    @default(0) @map("goals_against")
+  points        Int    @default(0)
+
+  // Relations
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([competitionId, clubId])
+  @@index([competitionId, points(sort: Desc)])
+  @@map("league_standings")
+}
+
+// ─── TOURNAMENT BRACKETS ────────────────────────────────────────────────────
+
+model TournamentBracket {
+  id            String          @id @default(cuid())
+  competitionId String          @map("competition_id")
+  stage         TournamentStage
+  matchOrder    Int             @map("match_order")
+  matchId       String?         @map("match_id")
+  homeClubId    String?         @map("home_club_id")
+  awayClubId    String?         @map("away_club_id")
+  isBypass      Boolean         @default(false) @map("is_bypass")
+  winnerId      String?         @map("winner_id")
+
+  // Relations
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  match       Match?      @relation(fields: [matchId], references: [id])
+  homeClub    Club?       @relation("BracketHome", fields: [homeClubId], references: [id])
+  awayClub    Club?       @relation("BracketAway", fields: [awayClubId], references: [id])
+  winnerClub  Club?       @relation("BracketWinner", fields: [winnerId], references: [id])
+
+  @@unique([competitionId, stage, matchOrder])
+  @@map("tournament_brackets")
+}
+
+enum TournamentStage {
+  ROUND_OF_64
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  FINAL
+}
