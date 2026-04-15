@@ -2,14 +2,14 @@
   "expo": {
     "name": "MatchDay Social",
     "slug": "matchday-social",
-    "version": "0.1.0",
+    "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0B0E1A"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -22,9 +22,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "backgroundColor": "#0B0E1A"
       },
       "package": "com.matchday.social",
+      "versionCode": 1,
       "permissions": ["ACCESS_FINE_LOCATION"]
     },
     "plugins": [

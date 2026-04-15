@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { showAlert } from '../utils/alert';
-import { COLORS, IMAGES } from '../utils/theme';
+import { C, IMG } from '../utils/theme';
 
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) return showAlert('Error', 'Rellena todos los campos');
@@ -19,52 +21,50 @@ export function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <ImageBackground source={{ uri: IMAGES.stadiumNight }} style={s.bg} resizeMode="cover">
+    <ImageBackground source={{ uri: IMG.stadium }} style={s.bg} resizeMode="cover">
       <View style={s.overlay}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-
-            {/* Logo */}
-            <View style={s.logoWrap}>
-              <View style={s.logoBox}>
-                <Text style={s.logoIcon}>⚽</Text>
-              </View>
-              <Text style={s.brand}>MATCHDAY</Text>
-              <Text style={s.tagline}>Organiza · Juega · Compite</Text>
+            {/* Brand */}
+            <View style={s.brand}>
+              <Ionicons name="football" size={44} color={C.primary} />
+              <Text style={s.logo}>MATCHDAY</Text>
+              <Text style={s.tagline}>La plataforma del fútbol amateur</Text>
             </View>
 
-            {/* Glass card */}
-            <View style={s.glass}>
-              <Text style={s.formTitle}>Iniciar Sesión</Text>
+            {/* Form card */}
+            <View style={s.card}>
+              <Text style={s.cardTitle}>Iniciar sesión</Text>
 
-              <View style={s.inputWrap}>
-                <Text style={s.inputIcon}>📧</Text>
-                <TextInput style={s.input} placeholder="Email" placeholderTextColor="#555" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+              <View style={s.field}>
+                <Ionicons name="mail-outline" size={20} color={C.t3} style={s.fieldIcon} />
+                <TextInput style={s.input} placeholder="Email" placeholderTextColor={C.t3} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
               </View>
 
-              <View style={s.inputWrap}>
-                <Text style={s.inputIcon}>🔒</Text>
-                <TextInput style={s.input} placeholder="Contraseña" placeholderTextColor="#555" value={password} onChangeText={setPassword} secureTextEntry />
+              <View style={s.field}>
+                <Ionicons name="lock-closed-outline" size={20} color={C.t3} style={s.fieldIcon} />
+                <TextInput style={s.input} placeholder="Contraseña" placeholderTextColor={C.t3} value={password} onChangeText={setPassword} secureTextEntry={!showPw} />
+                <TouchableOpacity onPress={() => setShowPw(!showPw)} style={s.eyeBtn}>
+                  <Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={C.t3} />
+                </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={[s.btn, loading && { opacity: 0.6 }]} onPress={handleLogin} disabled={loading}>
-                <Text style={s.btnText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
-              </TouchableOpacity>
-
-              <View style={s.divider}><View style={s.divLine} /><Text style={s.divText}>o</Text><View style={s.divLine} /></View>
-
-              <TouchableOpacity style={s.regBtn} onPress={() => navigation.navigate('Register')}>
-                <Text style={s.regText}>Crear cuenta nueva</Text>
+              <TouchableOpacity style={[s.btn, loading && s.btnOff]} onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
+                {loading ? <Ionicons name="reload" size={20} color={C.bg} /> : <Text style={s.btnText}>Entrar</Text>}
               </TouchableOpacity>
             </View>
 
-            {/* Features */}
+            {/* Register */}
+            <TouchableOpacity style={s.regBtn} onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+              <Text style={s.regText}>¿No tienes cuenta? <Text style={s.regLink}>Regístrate</Text></Text>
+            </TouchableOpacity>
+
+            {/* Features strip */}
             <View style={s.features}>
-              <Feature icon="🏟️" text="Partidos F5, F7, F11" />
-              <Feature icon="🏆" text="Ligas y torneos" />
-              <Feature icon="⭐" text="Rankings y MVP" />
+              <Feat icon="people" label="Partidos" />
+              <Feat icon="trophy" label="Torneos" />
+              <Feat icon="stats-chart" label="Rankings" />
             </View>
-
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -72,45 +72,41 @@ export function LoginScreen({ navigation }: any) {
   );
 }
 
-function Feature({ icon, text }: { icon: string; text: string }) {
+function Feat({ icon, label }: { icon: any; label: string }) {
   return (
     <View style={s.feat}>
-      <Text style={s.featIcon}>{icon}</Text>
-      <Text style={s.featText}>{text}</Text>
+      <Ionicons name={icon} size={18} color={C.primary} />
+      <Text style={s.featText}>{label}</Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   bg: { flex: 1 },
-  overlay: { flex: 1, backgroundColor: 'rgba(5,5,26,0.88)' },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, maxWidth: 440, alignSelf: 'center', width: '100%' },
+  overlay: { flex: 1, backgroundColor: 'rgba(11,14,26,0.92)' },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, maxWidth: 420, alignSelf: 'center', width: '100%' },
 
-  logoWrap: { alignItems: 'center', marginBottom: 32 },
-  logoBox: { width: 80, height: 80, borderRadius: 24, backgroundColor: COLORS.primaryDim, justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 2, borderColor: COLORS.primary },
-  logoIcon: { fontSize: 40 },
-  brand: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 4 },
-  tagline: { fontSize: 14, color: COLORS.textSecondary, marginTop: 6 },
+  brand: { alignItems: 'center', marginBottom: 36 },
+  logo: { fontSize: 28, fontWeight: '800', color: C.w, letterSpacing: 6, marginTop: 12 },
+  tagline: { fontSize: 13, color: C.t2, marginTop: 6, letterSpacing: 0.5 },
 
-  glass: { backgroundColor: 'rgba(13,17,38,0.85)', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: COLORS.borderLight, marginBottom: 28 },
-  formTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
+  card: { backgroundColor: C.card, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
+  cardTitle: { color: C.w, fontSize: 18, fontWeight: '700', marginBottom: 20 },
 
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bg, borderRadius: 14, marginBottom: 14, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 14 },
-  inputIcon: { fontSize: 18, marginRight: 10 },
-  input: { flex: 1, color: '#fff', padding: 15, fontSize: 15 },
+  field: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+  fieldIcon: { paddingLeft: 14 },
+  input: { flex: 1, color: C.w, padding: 14, fontSize: 15 },
+  eyeBtn: { padding: 14 },
 
-  btn: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 6 },
-  btnText: { color: COLORS.bg, fontSize: 16, fontWeight: '800' },
+  btn: { backgroundColor: C.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  btnOff: { opacity: 0.5 },
+  btnText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 18 },
-  divLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  divText: { color: COLORS.textMuted, marginHorizontal: 14, fontSize: 13 },
+  regBtn: { marginTop: 24, alignItems: 'center' },
+  regText: { color: C.t2, fontSize: 14 },
+  regLink: { color: C.primary, fontWeight: '600' },
 
-  regBtn: { borderWidth: 1.5, borderColor: COLORS.primary, padding: 14, borderRadius: 14, alignItems: 'center' },
-  regText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
-
-  features: { flexDirection: 'row', justifyContent: 'space-around' },
-  feat: { alignItems: 'center' },
-  featIcon: { fontSize: 28, marginBottom: 6 },
-  featText: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '500' },
+  features: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginTop: 36 },
+  feat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  featText: { color: C.t2, fontSize: 12, fontWeight: '500' },
 });

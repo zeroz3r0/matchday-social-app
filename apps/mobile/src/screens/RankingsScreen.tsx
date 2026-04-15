@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { rankingApi } from '../services/api';
-import { COLORS, IMAGES } from '../utils/theme';
+import { C } from '../utils/theme';
 
 const CATS = [
-  { key: 'GOALS', label: '⚽ Goles' },
-  { key: 'ASSISTS', label: '🎯 Asist.' },
-  { key: 'AVG_RATING', label: '⭐ Nota' },
-  { key: 'MVP_COUNT', label: '🏆 MVPs' },
+  { key: 'GOALS', label: 'Goles', icon: 'football' },
+  { key: 'ASSISTS', label: 'Asist.', icon: 'git-merge-outline' },
+  { key: 'AVG_RATING', label: 'Nota', icon: 'star' },
+  { key: 'MVP_COUNT', label: 'MVPs', icon: 'trophy' },
 ];
 const SCOPES = [
-  { key: 'LOCAL', label: '📍 50km' },
-  { key: 'CITY', label: '🏙️ Ciudad' },
-  { key: 'NATIONAL', label: '🇪🇸 Nacional' },
+  { key: 'LOCAL', label: '50 km', icon: 'navigate' },
+  { key: 'CITY', label: 'Ciudad', icon: 'business' },
+  { key: 'NATIONAL', label: 'Nacional', icon: 'earth' },
 ];
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = [C.gold, C.silver, C.bronze];
 
 export function RankingsScreen() {
   const [category, setCategory] = useState('GOALS');
@@ -35,53 +36,47 @@ export function RankingsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Top 3 for podium
   const top3 = data.slice(0, 3);
   const rest = data.slice(3);
 
   return (
     <View style={s.c}>
-      {/* Header */}
-      <ImageBackground source={{ uri: IMAGES.trophy }} style={s.hero} resizeMode="cover">
-        <View style={s.heroOv}>
-          <Text style={s.heroTitle}>🏆 Rankings</Text>
-        </View>
-      </ImageBackground>
+      <View style={s.header}>
+        <Ionicons name="trophy" size={22} color={C.gold} />
+        <Text style={s.headerT}>Rankings</Text>
+      </View>
 
-      {/* Filter pills */}
-      <View style={s.pills}>{CATS.map(c => (
-        <TouchableOpacity key={c.key} style={[s.pill, category === c.key && s.pillOn]} onPress={() => setCategory(c.key)}>
-          <Text style={[s.pillT, category === c.key && s.pillTOn]}>{c.label}</Text>
-        </TouchableOpacity>
-      ))}</View>
-      <View style={s.pills}>{SCOPES.map(sc => (
-        <TouchableOpacity key={sc.key} style={[s.pill, scope === sc.key && s.pillOn]} onPress={() => setScope(sc.key)}>
-          <Text style={[s.pillT, scope === sc.key && s.pillTOn]}>{sc.label}</Text>
+      {/* Category tabs */}
+      <View style={s.tabs}>{CATS.map(c => (
+        <TouchableOpacity key={c.key} style={[s.tab, category === c.key && s.tabOn]} onPress={() => setCategory(c.key)}>
+          <Ionicons name={c.icon as any} size={14} color={category === c.key ? C.bg : C.t3} />
+          <Text style={[s.tabT, category === c.key && s.tabTOn]}>{c.label}</Text>
         </TouchableOpacity>
       ))}</View>
 
-      {loading ? <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} /> : (
-        <FlatList
-          data={rest}
-          keyExtractor={r => r.userId}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+      <View style={s.tabs}>{SCOPES.map(sc => (
+        <TouchableOpacity key={sc.key} style={[s.tab, scope === sc.key && s.tabOn]} onPress={() => setScope(sc.key)}>
+          <Ionicons name={sc.icon as any} size={14} color={scope === sc.key ? C.bg : C.t3} />
+          <Text style={[s.tabT, scope === sc.key && s.tabTOn]}>{sc.label}</Text>
+        </TouchableOpacity>
+      ))}</View>
+
+      {loading ? <ActivityIndicator size="large" color={C.primary} style={{ marginTop: 40 }} /> : (
+        <FlatList data={rest} keyExtractor={r => r.userId} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           ListHeaderComponent={top3.length > 0 ? (
             <View style={s.podium}>
-              {/* 2nd place */}
-              {top3[1] ? <PodiumItem item={top3[1]} medal={MEDALS[1]} height={80} color={COLORS.silver} cat={category} /> : <View style={{ flex: 1 }} />}
-              {/* 1st place */}
-              {top3[0] ? <PodiumItem item={top3[0]} medal={MEDALS[0]} height={110} color={COLORS.gold} cat={category} /> : <View style={{ flex: 1 }} />}
-              {/* 3rd place */}
-              {top3[2] ? <PodiumItem item={top3[2]} medal={MEDALS[2]} height={60} color={COLORS.bronze} cat={category} /> : <View style={{ flex: 1 }} />}
+              {top3[1] ? <PodiumCard item={top3[1]} rank={2} color={C.silver} h={70} cat={category} /> : <View style={{ flex: 1 }} />}
+              {top3[0] ? <PodiumCard item={top3[0]} rank={1} color={C.gold} h={95} cat={category} /> : <View style={{ flex: 1 }} />}
+              {top3[2] ? <PodiumCard item={top3[2]} rank={3} color={C.bronze} h={55} cat={category} /> : <View style={{ flex: 1 }} />}
             </View>
           ) : null}
-          ListEmptyComponent={top3.length === 0 ? <View style={s.empty}><Text style={{ fontSize: 48 }}>📊</Text><Text style={s.emptyT}>Sin datos de ranking aún</Text></View> : null}
+          ListEmptyComponent={top3.length === 0 ? <View style={s.empty}><Ionicons name="bar-chart-outline" size={48} color={C.t3} /><Text style={s.emptyT}>Sin datos de ranking</Text></View> : null}
           renderItem={({ item }) => (
             <View style={s.row}>
               <Text style={s.rank}>{item.rank}</Text>
-              <View style={s.rowAvatar}><Text style={{ fontSize: 16 }}>⚽</Text></View>
-              <Text style={s.rowName} numberOfLines={1}>{item.nickname}</Text>
-              <Text style={s.rowVal}>{category === 'AVG_RATING' ? item.value.toFixed(1) : item.value}</Text>
+              <View style={s.rowAv}><Text style={s.rowAvT}>{item.nickname[0]}</Text></View>
+              <Text style={s.rowN} numberOfLines={1}>{item.nickname}</Text>
+              <Text style={s.rowV}>{category === 'AVG_RATING' ? item.value.toFixed(1) : item.value}</Text>
             </View>
           )}
         />
@@ -90,47 +85,49 @@ export function RankingsScreen() {
   );
 }
 
-function PodiumItem({ item, medal, height, color, cat }: { item: any; medal: string; height: number; color: string; cat: string }) {
+function PodiumCard({ item, rank, color, h, cat }: { item: any; rank: number; color: string; h: number; cat: string }) {
   return (
-    <View style={[ps.wrap, { flex: 1, alignItems: 'center' }]}>
-      <Text style={{ fontSize: 28 }}>{medal}</Text>
-      <View style={[ps.avatar, { borderColor: color }]}><Text style={ps.initial}>{item.nickname[0]}</Text></View>
-      <Text style={ps.name} numberOfLines={1}>{item.nickname}</Text>
-      <Text style={[ps.val, { color }]}>{cat === 'AVG_RATING' ? item.value.toFixed(1) : item.value}</Text>
-      <View style={[ps.bar, { height, backgroundColor: color + '33', borderColor: color }]} />
+    <View style={p.wrap}>
+      <View style={[p.av, { borderColor: color }]}><Text style={p.avT}>{item.nickname[0]}</Text></View>
+      <Text style={p.name} numberOfLines={1}>{item.nickname}</Text>
+      <Text style={[p.val, { color }]}>{cat === 'AVG_RATING' ? item.value.toFixed(1) : item.value}</Text>
+      <View style={[p.bar, { height: h, backgroundColor: color + '20', borderColor: color }]}>
+        <Text style={[p.rankN, { color }]}>{rank}</Text>
+      </View>
     </View>
   );
 }
 
-const ps = StyleSheet.create({
-  wrap: { marginHorizontal: 4 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginVertical: 6, borderWidth: 2 },
-  initial: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  name: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  val: { fontSize: 20, fontWeight: '900', marginVertical: 4 },
-  bar: { width: '80%', borderRadius: 8, borderWidth: 1, marginTop: 4 },
+const p = StyleSheet.create({
+  wrap: { flex: 1, alignItems: 'center', marginHorizontal: 3 },
+  av: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 2, marginBottom: 4 },
+  avT: { color: C.w, fontSize: 15, fontWeight: '800' },
+  name: { color: C.t1, fontSize: 11, fontWeight: '600' },
+  val: { fontSize: 18, fontWeight: '900', marginVertical: 4 },
+  bar: { width: '85%', borderRadius: 8, borderWidth: 1, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 6 },
+  rankN: { fontSize: 14, fontWeight: '900' },
 });
 
 const s = StyleSheet.create({
-  c: { flex: 1, backgroundColor: COLORS.bg },
-  hero: { height: 100 },
-  heroOv: { flex: 1, backgroundColor: 'rgba(5,5,26,0.75)', justifyContent: 'center', paddingHorizontal: 20 },
-  heroTitle: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  c: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 20, paddingBottom: 8 },
+  headerT: { color: C.w, fontSize: 22, fontWeight: '800' },
 
-  pills: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 6, gap: 6 },
-  pill: { backgroundColor: COLORS.card, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border },
-  pillOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  pillT: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
-  pillTOn: { color: COLORS.bg, fontWeight: '800' },
+  tabs: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 4, gap: 6 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.card, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: C.border },
+  tabOn: { backgroundColor: C.primary, borderColor: C.primary },
+  tabT: { color: C.t3, fontSize: 11, fontWeight: '700' },
+  tabTOn: { color: C.bg },
 
-  podium: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', paddingVertical: 20, marginBottom: 16 },
+  podium: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', paddingVertical: 20, marginBottom: 12 },
 
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
-  rank: { color: COLORS.textMuted, fontSize: 15, fontWeight: '800', width: 30, textAlign: 'center' },
-  rowAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  rowName: { color: '#fff', fontSize: 14, fontWeight: '600', flex: 1 },
-  rowVal: { color: COLORS.primary, fontSize: 18, fontWeight: '900' },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, padding: 12, borderRadius: 10, marginBottom: 6, borderWidth: 1, borderColor: C.border },
+  rank: { color: C.t3, fontSize: 14, fontWeight: '800', width: 28, textAlign: 'center' },
+  rowAv: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  rowAvT: { color: C.t2, fontSize: 13, fontWeight: '700' },
+  rowN: { color: C.t1, fontSize: 13, fontWeight: '600', flex: 1 },
+  rowV: { color: C.primary, fontSize: 16, fontWeight: '900' },
 
   empty: { alignItems: 'center', paddingTop: 60 },
-  emptyT: { color: COLORS.textSecondary, fontSize: 15, marginTop: 12 },
+  emptyT: { color: C.t2, fontSize: 14, marginTop: 12 },
 });

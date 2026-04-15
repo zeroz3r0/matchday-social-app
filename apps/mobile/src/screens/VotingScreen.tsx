@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { matchApi, voteApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { showAlert } from '../utils/alert';
+import { C } from '../utils/theme';
 
 export function VotingScreen({ route, navigation }: any) {
   const { matchId } = route.params || {};
@@ -13,121 +16,82 @@ export function VotingScreen({ route, navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadPlayers();
+    (async () => {
+      try {
+        const r = await matchApi.getById(matchId);
+        const all: any[] = [];
+        r.data.teams?.forEach((t: any) => {
+          t.players?.forEach((p: any) => {
+            if (p.invitationStatus === 'ACCEPTED' && p.user?.id !== user?.id) {
+              all.push({ id: p.user?.id || p.userId, nickname: p.user?.nickname || 'Jugador', teamName: t.name });
+            }
+          });
+        });
+        setPlayers(all);
+      } catch (err: any) { showAlert('Error', err.message); }
+      finally { setLoading(false); }
+    })();
   }, [matchId]);
 
-  const loadPlayers = async () => {
-    try {
-      const res = await matchApi.getById(matchId);
-      const match = res.data;
-      const allPlayers: any[] = [];
-      match.teams?.forEach((team: any) => {
-        team.players?.forEach((p: any) => {
-          if (p.invitationStatus === 'ACCEPTED' && p.user?.id !== user?.id) {
-            allPlayers.push({
-              id: p.user?.id || p.userId,
-              nickname: p.user?.nickname || 'Jugador',
-              position: p.user?.position || p.position,
-              teamName: team.name,
-            });
-          }
-        });
-      });
-      setPlayers(allPlayers);
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const setRating = (playerId: string, rating: number) => {
-    setRatings((prev) => ({ ...prev, [playerId]: rating }));
-  };
-
   const handleSubmit = async () => {
-    if (!mvpPick) return Alert.alert('MVP', 'Selecciona un MVP');
-
-    const unrated = players.filter((p) => !ratings[p.id]);
-    if (unrated.length > 0) return Alert.alert('Faltan notas', `Valora a todos los jugadores (faltan ${unrated.length})`);
+    if (!mvpPick) return showAlert('MVP', 'Selecciona un MVP');
+    const unrated = players.filter(p => !ratings[p.id]);
+    if (unrated.length > 0) return showAlert('Faltan valoraciones', `Valora a los ${unrated.length} jugadores restantes`);
 
     setSubmitting(true);
     try {
-      // Submit all votes in parallel
       const results = await Promise.allSettled(
-        players.map((player) =>
-          voteApi.cast(matchId, {
-            targetPlayerId: player.id,
-            rating: ratings[player.id]!,
-            isMvpVote: player.id === mvpPick,
-          }),
-        ),
+        players.map(p => voteApi.cast(matchId, { targetPlayerId: p.id, rating: ratings[p.id]!, isMvpVote: p.id === mvpPick }))
       );
-      const failures = results.filter((r) => r.status === 'rejected');
-      if (failures.length > 0) {
-        Alert.alert('Error', `${failures.length} voto(s) fallaron. Intenta de nuevo.`);
-      } else {
-        Alert.alert('Votos enviados', 'Gracias por votar!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setSubmitting(false);
-    }
+      const failed = results.filter(r => r.status === 'rejected').length;
+      if (failed > 0) showAlert('Aviso', `${failed} votos no se enviaron`);
+      else showAlert('Votos enviados', 'Gracias por votar', () => navigation.goBack());
+    } catch (err: any) { showAlert('Error', err.message); }
+    finally { setSubmitting(false); }
   };
 
-  if (loading) {
-    return <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color="#16db93" /></View>;
-  }
+  if (loading) return <View style={[s.c, s.ctr]}><ActivityIndicator size="large" color={C.primary} /></View>;
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={s.backText}>← Volver</Text>
-      </TouchableOpacity>
+    <ScrollView style={s.c} contentContainerStyle={s.cc}>
+      <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color={C.t2} /></TouchableOpacity>
 
-      <Text style={s.title}>🗳️ Votacion</Text>
-      <Text style={s.subtitle}>Valora a cada jugador del 1 al 10 y elige tu MVP</Text>
+      <View style={s.header}>
+        <Ionicons name="thumbs-up" size={24} color={C.blue} />
+        <Text style={s.title}>Valoraciones</Text>
+      </View>
+      <Text style={s.sub}>Puntúa a cada jugador del 1 al 10 y elige tu MVP</Text>
 
-      {players.length === 0 && (
-        <Text style={s.emptyText}>No hay jugadores para votar</Text>
-      )}
+      {players.length === 0 && <Text style={s.emptyT}>No hay jugadores para valorar</Text>}
 
-      {players.map((player) => (
-        <View key={player.id} style={s.playerCard}>
-          <View style={s.playerHeader}>
-            <View>
-              <Text style={s.playerName}>{player.nickname}</Text>
-              <Text style={s.playerTeam}>{player.teamName}</Text>
+      {players.map(player => (
+        <View key={player.id} style={s.card}>
+          <View style={s.cardHead}>
+            <View style={s.cardLeft}>
+              <View style={s.av}><Text style={s.avT}>{player.nickname[0]}</Text></View>
+              <View><Text style={s.pName}>{player.nickname}</Text><Text style={s.pTeam}>{player.teamName}</Text></View>
             </View>
-            <TouchableOpacity
-              style={[s.mvpBtn, mvpPick === player.id && s.mvpBtnActive]}
-              onPress={() => setMvpPick(player.id)}
-            >
-              <Text style={s.mvpText}>🏆 MVP</Text>
+            <TouchableOpacity style={[s.mvpBtn, mvpPick === player.id && s.mvpBtnOn]} onPress={() => setMvpPick(player.id)}>
+              <Ionicons name="trophy" size={14} color={mvpPick === player.id ? C.bg : C.gold} />
+              <Text style={[s.mvpT, mvpPick === player.id && s.mvpTOn]}>MVP</Text>
             </TouchableOpacity>
           </View>
 
           <View style={s.ratingRow}>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <TouchableOpacity
-                key={n}
-                style={[s.ratingBtn, (ratings[player.id] || 0) >= n && s.ratingBtnActive]}
-                onPress={() => setRating(player.id, n)}
-              >
-                <Text style={s.ratingText}>{n}</Text>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+              <TouchableOpacity key={n} style={[s.rBtn, (ratings[player.id] || 0) >= n && s.rBtnOn]} onPress={() => setRatings(prev => ({ ...prev, [player.id]: n }))}>
+                <Text style={[s.rBtnT, (ratings[player.id] || 0) >= n && s.rBtnTOn]}>{n}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          {ratings[player.id] && (
-            <Text style={s.ratingLabel}>Nota: {ratings[player.id]}/10</Text>
-          )}
+          {ratings[player.id] && <Text style={s.rLabel}>{ratings[player.id]}/10</Text>}
         </View>
       ))}
 
       {players.length > 0 && (
-        <TouchableOpacity style={s.submitBtn} onPress={handleSubmit} disabled={submitting}>
-          <Text style={s.submitText}>{submitting ? 'Enviando...' : 'Enviar Votos'}</Text>
+        <TouchableOpacity style={[s.submitBtn, submitting && { opacity: 0.5 }]} onPress={handleSubmit} disabled={submitting}>
+          <Ionicons name="send" size={18} color={C.bg} />
+          <Text style={s.submitT}>{submitting ? 'Enviando...' : 'Enviar valoraciones'}</Text>
         </TouchableOpacity>
       )}
     </ScrollView>
@@ -135,24 +99,33 @@ export function VotingScreen({ route, navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f23' },
-  content: { padding: 24 },
-  backText: { color: '#16db93', fontSize: 16, marginBottom: 16 },
-  title: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  subtitle: { color: '#888', fontSize: 14, marginBottom: 24 },
-  emptyText: { color: '#666', textAlign: 'center', marginTop: 40 },
-  playerCard: { backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginBottom: 16 },
-  playerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  playerName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  playerTeam: { color: '#888', fontSize: 12, marginTop: 2 },
-  mvpBtn: { backgroundColor: '#333', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  mvpBtnActive: { backgroundColor: '#f0a500' },
-  mvpText: { fontSize: 13 },
+  c: { flex: 1, backgroundColor: C.bg }, ctr: { justifyContent: 'center', alignItems: 'center' },
+  cc: { padding: 20, paddingTop: 50, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  title: { color: C.w, fontSize: 22, fontWeight: '800' },
+  sub: { color: C.t2, fontSize: 13, marginTop: 4, marginBottom: 24 },
+  emptyT: { color: C.t3, textAlign: 'center', marginTop: 40 },
+
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.border },
+  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  av: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center' },
+  avT: { color: C.t2, fontSize: 14, fontWeight: '700' },
+  pName: { color: C.t1, fontSize: 14, fontWeight: '700' },
+  pTeam: { color: C.t3, fontSize: 11, marginTop: 1 },
+
+  mvpBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.goldMuted, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,184,0,0.3)' },
+  mvpBtnOn: { backgroundColor: C.gold, borderColor: C.gold },
+  mvpT: { color: C.gold, fontSize: 12, fontWeight: '700' },
+  mvpTOn: { color: C.bg },
+
   ratingRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  ratingBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-  ratingBtnActive: { backgroundColor: '#16db93' },
-  ratingText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-  ratingLabel: { color: '#16db93', fontSize: 12, marginTop: 8, textAlign: 'right' },
-  submitBtn: { backgroundColor: '#16db93', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  submitText: { color: '#0f0f23', fontSize: 18, fontWeight: 'bold' },
+  rBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center' },
+  rBtnOn: { backgroundColor: C.primary },
+  rBtnT: { color: C.t3, fontSize: 12, fontWeight: '700' },
+  rBtnTOn: { color: C.bg },
+  rLabel: { color: C.primary, fontSize: 12, marginTop: 8, textAlign: 'right', fontWeight: '700' },
+
+  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, padding: 16, borderRadius: 12, marginTop: 8 },
+  submitT: { color: C.bg, fontSize: 15, fontWeight: '700' },
 });

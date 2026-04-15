@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, ImageBackground } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { matchApi } from '../services/api';
-import { COLORS, IMAGES, GAME_TYPE_COLORS, STATUS_CONFIG } from '../utils/theme';
+import { C, IMG, GAME_COLORS, STATUS } from '../utils/theme';
 
 export function HomeScreen({ navigation }: any) {
   const [matches, setMatches] = useState<any[]>([]);
@@ -9,7 +10,7 @@ export function HomeScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchMatches = useCallback(async () => {
-    try { const res = await matchApi.list(); setMatches(res.data); } catch {}
+    try { const r = await matchApi.list(); setMatches(r.data); } catch {}
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -17,93 +18,80 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => { const u = navigation.addListener('focus', fetchMatches); return u; }, [navigation, fetchMatches]);
 
   const team = (m: any, home: boolean) => m.teams?.find((t: any) => t.isHome === home)?.name || (home ? 'Local' : 'Visitante');
-
   const fmtDate = (iso: string) => {
     const d = new Date(iso);
     return { day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }), time: d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) };
   };
 
-  if (loading) return <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color={COLORS.primary} /><Text style={{ color: COLORS.textMuted, marginTop: 12 }}>Cargando partidos...</Text></View>;
+  if (loading) return <View style={[s.c, s.ctr]}><ActivityIndicator size="large" color={C.primary} /></View>;
 
   return (
-    <View style={s.container}>
-      {/* Hero banner */}
-      <ImageBackground source={{ uri: IMAGES.fieldTopDown }} style={s.hero} resizeMode="cover">
-        <View style={s.heroOverlay}>
-          <View style={s.heroContent}>
-            <Text style={s.heroTitle}>⚽ Mis Partidos</Text>
-            <Text style={s.heroSub}>{matches.length} {matches.length === 1 ? 'partido programado' : 'partidos'}</Text>
+    <View style={s.c}>
+      {/* Header */}
+      <ImageBackground source={{ uri: IMG.field }} style={s.hero} resizeMode="cover">
+        <View style={s.heroOv}>
+          <View>
+            <Text style={s.heroT}>Partidos</Text>
+            <Text style={s.heroS}>{matches.length} {matches.length === 1 ? 'encuentro' : 'encuentros'}</Text>
           </View>
           <TouchableOpacity style={s.heroBtn} onPress={() => navigation.navigate('CreateMatch')}>
-            <Text style={s.heroBtnText}>+ Crear</Text>
+            <Ionicons name="add" size={20} color={C.bg} />
+            <Text style={s.heroBtnT}>Nuevo</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
 
-      <FlatList
-        data={matches}
-        keyExtractor={m => m.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMatches(); }} tintColor={COLORS.primary} />}
+      <FlatList data={matches} keyExtractor={m => m.id} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMatches(); }} tintColor={C.primary} />}
         ListEmptyComponent={
           <View style={s.empty}>
-            <Text style={{ fontSize: 72 }}>🏟️</Text>
-            <Text style={s.emptyTitle}>No hay partidos</Text>
-            <Text style={s.emptyHint}>¡Crea el primero y convoca a tus amigos!</Text>
-            <TouchableOpacity style={s.emptyBtn} onPress={() => navigation.navigate('CreateMatch')}><Text style={s.emptyBtnT}>Crear partido</Text></TouchableOpacity>
+            <Ionicons name="football-outline" size={56} color={C.t3} />
+            <Text style={s.emptyT}>No hay partidos</Text>
+            <Text style={s.emptyH}>Crea el primero y convoca a tus amigos</Text>
+            <TouchableOpacity style={s.emptyBtn} onPress={() => navigation.navigate('CreateMatch')}>
+              <Text style={s.emptyBtnT}>Crear partido</Text>
+            </TouchableOpacity>
           </View>
         }
         renderItem={({ item }) => {
           const { day, time } = fmtDate(item.scheduledAt);
-          const gt = GAME_TYPE_COLORS[item.gameType] || GAME_TYPE_COLORS.F7;
-          const st = STATUS_CONFIG[item.status] || STATUS_CONFIG.SCHEDULED;
-          const hasScore = item.homeScore != null && item.awayScore != null;
+          const gc = GAME_COLORS[item.gameType] || GAME_COLORS.F7;
+          const st = STATUS[item.status] || STATUS.SCHEDULED;
+          const hasScore = item.homeScore != null;
 
           return (
             <TouchableOpacity style={s.card} onPress={() => navigation.navigate('MatchDetail', { matchId: item.id })} activeOpacity={0.7}>
-              {/* Colored top accent bar */}
-              <View style={[s.accent, { backgroundColor: gt.text }]} />
-
-              <View style={s.cardInner}>
-                {/* Header: game type + status */}
-                <View style={s.cardHeader}>
-                  <View style={[s.badge, { backgroundColor: gt.bg }]}>
-                    <Text style={[s.badgeText, { color: gt.text }]}>{item.gameType} · {gt.label}</Text>
-                  </View>
-                  <View style={[s.badge, { backgroundColor: st.bg }]}>
-                    <Text style={[s.badgeText, { color: st.color }]}>{st.icon} {st.label}</Text>
-                  </View>
+              <View style={[s.accentBar, { backgroundColor: gc.accent }]} />
+              <View style={s.cardBody}>
+                {/* Header */}
+                <View style={s.cardHead}>
+                  <View style={[s.tag, { backgroundColor: gc.bg }]}><Text style={[s.tagT, { color: gc.accent }]}>{item.gameType}</Text></View>
+                  <View style={[s.tag, { backgroundColor: st.bg }]}><Text style={[s.tagT, { color: st.color }]}>{st.label}</Text></View>
                 </View>
 
                 {/* Scoreboard */}
-                <View style={s.scoreboard}>
-                  <View style={s.teamCol}>
-                    <View style={s.teamBadge}><Text style={{ fontSize: 22 }}>🏠</Text></View>
-                    <Text style={s.teamName} numberOfLines={1}>{team(item, true)}</Text>
+                <View style={s.board}>
+                  <View style={s.side}>
+                    <View style={s.shield}><Ionicons name="shirt" size={22} color={C.t2} /></View>
+                    <Text style={s.teamN} numberOfLines={1}>{team(item, true)}</Text>
                   </View>
-
-                  <View style={s.scoreCenter}>
+                  <View style={s.mid}>
                     {hasScore ? (
-                      <View style={s.scoreRow}>
-                        <Text style={s.scoreNum}>{item.homeScore}</Text>
-                        <Text style={s.scoreDash}>—</Text>
-                        <Text style={s.scoreNum}>{item.awayScore}</Text>
-                      </View>
+                      <Text style={s.score}>{item.homeScore} — {item.awayScore}</Text>
                     ) : (
-                      <View style={s.timeBox}><Text style={s.timeText}>{time}</Text></View>
+                      <View style={s.timeBox}><Text style={s.timeT}>{time}</Text></View>
                     )}
                   </View>
-
-                  <View style={[s.teamCol, { alignItems: 'flex-end' }]}>
-                    <View style={s.teamBadge}><Text style={{ fontSize: 22 }}>✈️</Text></View>
-                    <Text style={[s.teamName, { textAlign: 'right' }]} numberOfLines={1}>{team(item, false)}</Text>
+                  <View style={[s.side, { alignItems: 'flex-end' }]}>
+                    <View style={s.shield}><Ionicons name="shirt-outline" size={22} color={C.t2} /></View>
+                    <Text style={[s.teamN, { textAlign: 'right' }]} numberOfLines={1}>{team(item, false)}</Text>
                   </View>
                 </View>
 
                 {/* Footer */}
-                <View style={s.cardFooter}>
-                  <Text style={s.footerText}>📅 {day}</Text>
-                  <Text style={s.footerText}>📍 {item.locationName || 'Por definir'}</Text>
+                <View style={s.foot}>
+                  <View style={s.footItem}><Ionicons name="calendar-outline" size={13} color={C.t3} /><Text style={s.footT}>{day}</Text></View>
+                  <View style={s.footItem}><Ionicons name="location-outline" size={13} color={C.t3} /><Text style={s.footT}>{item.locationName || 'Por definir'}</Text></View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -115,42 +103,37 @@ export function HomeScreen({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  c: { flex: 1, backgroundColor: C.bg }, ctr: { justifyContent: 'center', alignItems: 'center' },
+  hero: { height: 130 },
+  heroOv: { flex: 1, backgroundColor: 'rgba(11,14,26,0.8)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  heroT: { color: C.w, fontSize: 24, fontWeight: '800' },
+  heroS: { color: C.t2, fontSize: 13, marginTop: 2 },
+  heroBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  heroBtnT: { color: C.bg, fontWeight: '700', fontSize: 13 },
 
-  hero: { height: 140 },
-  heroOverlay: { flex: 1, backgroundColor: 'rgba(5,5,26,0.75)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
-  heroContent: {},
-  heroTitle: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  heroSub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 4 },
-  heroBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
-  heroBtnText: { color: COLORS.bg, fontWeight: '800', fontSize: 14 },
+  card: { backgroundColor: C.card, borderRadius: 14, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
+  accentBar: { height: 3 },
+  cardBody: { padding: 16 },
+  cardHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
+  tag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6 },
+  tagT: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
 
-  card: { backgroundColor: COLORS.card, borderRadius: 16, marginBottom: 14, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
-  accent: { height: 3 },
-  cardInner: { padding: 16 },
+  board: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  side: { flex: 1 },
+  shield: { width: 40, height: 40, borderRadius: 10, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  teamN: { color: C.t1, fontSize: 13, fontWeight: '700' },
+  mid: { paddingHorizontal: 12, alignItems: 'center' },
+  score: { color: C.w, fontSize: 28, fontWeight: '900', letterSpacing: 2 },
+  timeBox: { backgroundColor: C.surface, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8 },
+  timeT: { color: C.blue, fontSize: 14, fontWeight: '800' },
 
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
+  foot: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 },
+  footItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  footT: { color: C.t3, fontSize: 11 },
 
-  scoreboard: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  teamCol: { flex: 1, alignItems: 'flex-start' },
-  teamBadge: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  teamName: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700' },
-
-  scoreCenter: { paddingHorizontal: 12, alignItems: 'center' },
-  scoreRow: { flexDirection: 'row', alignItems: 'center' },
-  scoreNum: { color: '#fff', fontSize: 32, fontWeight: '900' },
-  scoreDash: { color: COLORS.textMuted, fontSize: 24, marginHorizontal: 8 },
-  timeBox: { backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 10 },
-  timeText: { color: COLORS.blue, fontSize: 16, fontWeight: '800' },
-
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 },
-  footerText: { color: COLORS.textMuted, fontSize: 11 },
-
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
-  emptyHint: { color: COLORS.textSecondary, fontSize: 14, marginTop: 8 },
-  emptyBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, marginTop: 24 },
-  emptyBtnT: { color: COLORS.bg, fontWeight: '800' },
+  empty: { alignItems: 'center', paddingTop: 70 },
+  emptyT: { color: C.t1, fontSize: 20, fontWeight: '700', marginTop: 16 },
+  emptyH: { color: C.t2, fontSize: 13, marginTop: 6 },
+  emptyBtn: { backgroundColor: C.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginTop: 20 },
+  emptyBtnT: { color: C.bg, fontWeight: '700' },
 });

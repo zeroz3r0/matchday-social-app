@@ -3,8 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { COLORS } from '../utils/theme';
+import { C } from '../utils/theme';
 
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
@@ -19,29 +20,32 @@ import { VotingScreen } from '../screens/VotingScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', paddingTop: 4 }}>
-      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.4 }}>{emoji}</Text>
-    </View>
-  );
-}
+const TAB_ICONS: Record<string, { active: any; inactive: any }> = {
+  Home: { active: 'football', inactive: 'football-outline' },
+  Rankings: { active: 'trophy', inactive: 'trophy-outline' },
+  Clubs: { active: 'shield', inactive: 'shield-outline' },
+  Profile: { active: 'person', inactive: 'person-outline' },
+};
 
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: COLORS.card, borderTopColor: COLORS.border, borderTopWidth: 1, height: 64, paddingBottom: 10, paddingTop: 6 },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
-      }}
+        tabBarStyle: { backgroundColor: C.card, borderTopColor: C.border, borderTopWidth: 1, height: 60, paddingBottom: 8, paddingTop: 4 },
+        tabBarActiveTintColor: C.primary,
+        tabBarInactiveTintColor: C.t3,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = TAB_ICONS[route.name] || TAB_ICONS.Home;
+          return <Ionicons name={focused ? icons.active : icons.inactive} size={22} color={color} />;
+        },
+      })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Partidos', tabBarIcon: ({ focused }) => <TabIcon emoji="⚽" label="Partidos" focused={focused} /> }} />
-      <Tab.Screen name="Rankings" component={RankingsScreen} options={{ title: 'Ranking', tabBarIcon: ({ focused }) => <TabIcon emoji="🏆" label="Ranking" focused={focused} /> }} />
-      <Tab.Screen name="Clubs" component={ClubsScreen} options={{ title: 'Clubes', tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" label="Clubes" focused={focused} /> }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil', tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Perfil" focused={focused} /> }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Partidos' }} />
+      <Tab.Screen name="Rankings" component={RankingsScreen} options={{ title: 'Ranking' }} />
+      <Tab.Screen name="Clubs" component={ClubsScreen} options={{ title: 'Clubes' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
   );
 }
@@ -51,10 +55,10 @@ export function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
-        <Text style={{ fontSize: 48, marginBottom: 16 }}>⚽</Text>
-        <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900', letterSpacing: 2 }}>MATCHDAY</Text>
-        <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 24 }} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.bg }}>
+        <Ionicons name="football" size={44} color={C.primary} />
+        <Text style={{ color: C.w, fontSize: 20, fontWeight: '800', letterSpacing: 4, marginTop: 16 }}>MATCHDAY</Text>
+        <ActivityIndicator size="small" color={C.primary} style={{ marginTop: 20 }} />
       </View>
     );
   }

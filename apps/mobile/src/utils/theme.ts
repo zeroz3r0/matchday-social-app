@@ -1,70 +1,66 @@
 // ============================================================================
-// Theme — Colors, images, and design tokens
-// Inspired by FotMob, OneFootball, BeSoccer
+// Theme — Professional dark theme inspired by FotMob / OneFootball
 // ============================================================================
 
-export const COLORS = {
-  // Backgrounds
-  bg: '#05051a',
-  card: '#0d1126',
-  cardAlt: '#111633',
-  surface: '#161b3d',
+export const C = {
+  // Backgrounds (deep navy gradient feel)
+  bg: '#0B0E1A',
+  card: '#131829',
+  cardHover: '#1A2035',
+  surface: '#1E2540',
+  elevated: '#252D4A',
 
-  // Primary
-  primary: '#00e676',      // Electric green (like FotMob)
-  primaryDim: '#00e67633',
+  // Primary — vibrant green (action, success, primary CTA)
+  primary: '#00DC82',
+  primaryMuted: 'rgba(0,220,130,0.15)',
+  primaryBorder: 'rgba(0,220,130,0.3)',
 
-  // Accents
-  gold: '#ffd700',
-  silver: '#c0c0c0',
-  bronze: '#cd7f32',
-  orange: '#ff8c00',
-  red: '#ff3d57',
-  redDim: '#ff3d5722',
-  blue: '#4fc3f7',
-  purple: '#b388ff',
+  // Accent colors (each section gets its own identity)
+  gold: '#FFB800',
+  goldMuted: 'rgba(255,184,0,0.15)',
+  red: '#FF4757',
+  redMuted: 'rgba(255,71,87,0.12)',
+  blue: '#3B82F6',
+  blueMuted: 'rgba(59,130,246,0.15)',
+  purple: '#8B5CF6',
+  purpleMuted: 'rgba(139,92,246,0.15)',
+  orange: '#F97316',
+  orangeMuted: 'rgba(249,115,22,0.15)',
+  silver: '#94A3B8',
+  bronze: '#C2855A',
 
   // Text
-  textPrimary: '#ffffff',
-  textSecondary: '#8892b0',
-  textMuted: '#4a5280',
-  textAccent: '#00e676',
+  w: '#FFFFFF',
+  t1: '#E2E8F0',  // primary text
+  t2: '#94A3B8',  // secondary
+  t3: '#475569',  // muted/disabled
+  t4: '#334155',  // very muted
 
   // Borders
-  border: '#1a2048',
-  borderLight: '#232a52',
+  border: '#1E293B',
+  borderLight: '#334155',
 };
 
-// Free high-quality FOOTBALL images (verified Unsplash direct links)
-export const IMAGES = {
-  // Login — estadio lleno de noche
-  stadiumNight: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
-  // Profile — balones en césped
-  stadiumGrass: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800&q=80',
-  // Home — estadio iluminado desde arriba
-  fieldTopDown: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=600&q=80',
-  // Clubs — niños jugando fútbol en equipo
-  teamHuddle: 'https://images.unsplash.com/photo-1526232761682-d26e03ac148e?w=600&q=80',
-  // Rankings — jugador chutando
-  trophy: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=600&q=80',
-  // Extra — campo de noche con focos
-  fieldNight: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600&q=80',
-  // Extra — bota pisando balón
-  ballClose: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=600&q=80',
-  // Extra — línea de césped
-  grassLine: 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=600&q=80',
+// Real football images — all verified
+export const IMG = {
+  stadium: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=900&q=80',
+  field: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=900&q=80',
+  grass: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=900&q=80',
+  players: 'https://images.unsplash.com/photo-1526232761682-d26e03ac148e?w=900&q=80',
+  kick: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=900&q=80',
+  night: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80',
 };
 
-export const GAME_TYPE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  F5: { bg: '#ff3d5722', text: '#ff3d57', label: 'Fútbol 5' },
-  F7: { bg: '#ff8c0022', text: '#ff8c00', label: 'Fútbol 7' },
-  F11: { bg: '#00e67622', text: '#00e676', label: 'Fútbol 11' },
+export const GAME_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
+  F5: { accent: '#FF4757', bg: 'rgba(255,71,87,0.12)', label: 'Fútbol Sala' },
+  F7: { accent: '#F97316', bg: 'rgba(249,115,22,0.12)', label: 'Fútbol 7' },
+  F11: { accent: '#00DC82', bg: 'rgba(0,220,130,0.12)', label: 'Fútbol 11' },
 };
 
-export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  SCHEDULED: { label: 'Programado', color: '#4fc3f7', bg: '#4fc3f722', icon: '📅' },
-  IN_PROGRESS: { label: 'En juego', color: '#ff3d57', bg: '#ff3d5722', icon: '🔴' },
-  COMPLETED: { label: 'Finalizado', color: '#00e676', bg: '#00e67622', icon: '✅' },
-  CANCELLED: { label: 'Cancelado', color: '#8892b0', bg: '#8892b022', icon: '❌' },
-  POSTPONED: { label: 'Aplazado', color: '#b388ff', bg: '#b388ff22', icon: '⏸' },
+export const STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  SCHEDULED: { label: 'Programado', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  IN_PROGRESS: { label: 'En juego', color: '#FF4757', bg: 'rgba(255,71,87,0.12)' },
+  COMPLETED: { label: 'Finalizado', color: '#00DC82', bg: 'rgba(0,220,130,0.12)' },
+  CANCELLED: { label: 'Cancelado', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
+  POSTPONED: { label: 'Aplazado', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
 };
