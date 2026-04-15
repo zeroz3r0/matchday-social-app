@@ -2,12 +2,12 @@
 // API Client — Fetch wrapper with auth
 // ============================================================================
 
-import * as SecureStore from 'expo-secure-store';
+import { getItem } from '../utils/storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync('auth_token');
+  return getItem('auth_token');
 }
 
 async function request<T>(
@@ -25,12 +25,22 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
+    signal: controller.signal,
   });
+  clearTimeout(timeoutId);
 
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    data = { error: { message: response.statusText } };
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, data.error?.code || 'UNKNOWN', data.error?.message || 'Error desconocido');

@@ -43,9 +43,9 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
             + sin(radians($${params.length + 1}))
             * sin(radians(u.latitude))
           )
-        ) <= ${LOCAL_RANKING_RADIUS_KM}
+        ) <= $${params.length + 3}
       `;
-      params.push(filters.latitude, filters.longitude);
+      params.push(filters.latitude, filters.longitude, LOCAL_RANKING_RADIUS_KM);
     } else if (filters.scope === 'CITY' && filters.city) {
       geoFilter = `AND u.city = $${params.length + 1}`;
       params.push(filters.city);
@@ -53,7 +53,6 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
     // NATIONAL = no geo filter
 
     let query: string;
-    let countQuery: string;
 
     switch (filters.category) {
       case 'GOALS':
@@ -113,6 +112,9 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
           LIMIT $${params.length + 1} OFFSET $${params.length + 2}
         `;
         break;
+
+      default:
+        throw new Error(`Unknown ranking category: ${filters.category satisfies never}`);
     }
 
     params.push(filters.limit, filters.offset);

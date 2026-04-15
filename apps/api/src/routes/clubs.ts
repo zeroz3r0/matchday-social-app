@@ -6,6 +6,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
 
 export const clubRoutes = Router();
 
@@ -70,6 +71,17 @@ clubRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
 
 clubRoutes.post('/:id/members', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const requesterId = req.user!.userId;
+    const clubId = req.params['id']!;
+
+    // Verify requester is ADMIN of the club
+    const requesterMember = await prisma.clubMember.findFirst({
+      where: { clubId, userId: requesterId, role: 'ADMIN' },
+    });
+    if (!requesterMember) {
+      throw new AppError(403, 'FORBIDDEN', 'Solo los administradores del club pueden agregar miembros');
+    }
+
     const { userId, role } = z.object({
       userId: z.string(),
       role: z.enum(['CAPTAIN', 'PLAYER']).default('PLAYER'),

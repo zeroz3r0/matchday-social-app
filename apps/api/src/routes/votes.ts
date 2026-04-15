@@ -35,6 +35,14 @@ voteRoutes.post('/:matchId', authenticate, async (req: Request, res: Response, n
       throw new AppError(400, 'VOTING_CLOSED', 'Ventana de votacion cerrada');
     }
 
+    // Verify voter is a match participant
+    const voterPlayer = await prisma.matchPlayer.findFirst({
+      where: { userId: voterId, matchTeam: { matchId }, invitationStatus: 'ACCEPTED' },
+    });
+    if (!voterPlayer) {
+      throw new AppError(403, 'NOT_PARTICIPANT', 'Solo los participantes del partido pueden votar');
+    }
+
     // Voter cant vote themselves
     if (voterId === data.targetPlayerId) {
       throw new AppError(400, 'SELF_VOTE', 'No puedes votarte a ti mismo');
@@ -71,6 +79,7 @@ voteRoutes.post('/:matchId', authenticate, async (req: Request, res: Response, n
 voteRoutes.post('/:matchId/close', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { matchId } = req.params;
+    const userId = req.user!.userId;
 
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -87,6 +96,11 @@ voteRoutes.post('/:matchId/close', authenticate, async (req: Request, res: Respo
     });
 
     if (!match) throw new AppError(404, 'NOT_FOUND', 'Partido no encontrado');
+
+    // Only match creator can close voting
+    if (userId !== match.createdById) {
+      throw new AppError(403, 'FORBIDDEN', 'Solo el creador del partido puede cerrar la votacion');
+    }
 
     const homeTeam = match.teams.find((t) => t.isHome)!;
     const awayTeam = match.teams.find((t) => !t.isHome)!;

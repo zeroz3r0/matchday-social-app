@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Modal, ImageBackground } from 'react-native';
 import { clubApi } from '../services/api';
+import { showAlert } from '../utils/alert';
+import { COLORS, IMAGES } from '../utils/theme';
+
+const CLUB_COLORS = ['#ff3d57', '#4fc3f7', '#00e676', '#ffd700', '#b388ff', '#ff8c00'];
 
 export function ClubsScreen() {
   const [clubs, setClubs] = useState<any[]>([]);
@@ -10,88 +14,66 @@ export function ClubsScreen() {
   const [newDesc, setNewDesc] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const fetchClubs = useCallback(async () => {
-    try {
-      const res = await clubApi.list();
-      setClubs(res.data);
-    } catch (err) {
-      console.error('Error fetching clubs:', err);
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async () => {
+    try { const r = await clubApi.list(); setClubs(r.data); } catch {} finally { setLoading(false); }
   }, []);
-
-  useEffect(() => { fetchClubs(); }, [fetchClubs]);
+  useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
-    if (!newName.trim()) return Alert.alert('Error', 'Nombre requerido');
+    if (!newName.trim()) return showAlert('Error', 'Nombre requerido');
     setCreating(true);
     try {
       await clubApi.create({ name: newName.trim(), description: newDesc.trim() || undefined });
-      setShowCreate(false);
-      setNewName('');
-      setNewDesc('');
-      fetchClubs();
-      Alert.alert('Club creado!');
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setCreating(false);
-    }
+      setShowCreate(false); setNewName(''); setNewDesc('');
+      load();
+    } catch (e: any) { showAlert('Error', e.message); }
+    finally { setCreating(false); }
   };
 
-  if (loading) {
-    return <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color="#16db93" /></View>;
-  }
+  if (loading) return <View style={[s.c, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
 
   return (
-    <View style={s.container}>
-      <View style={s.header}>
-        <Text style={s.title}>Mis Clubes</Text>
-        <TouchableOpacity style={s.addBtn} onPress={() => setShowCreate(true)}>
-          <Text style={s.addText}>+ Crear Club</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={s.c}>
+      <ImageBackground source={{ uri: IMAGES.teamHuddle }} style={s.hero} resizeMode="cover">
+        <View style={s.heroOv}>
+          <Text style={s.heroT}>🛡️ Mis Clubes</Text>
+          <TouchableOpacity style={s.heroBtn} onPress={() => setShowCreate(true)}><Text style={s.heroBtnT}>+ Crear</Text></TouchableOpacity>
+        </View>
+      </ImageBackground>
 
-      <FlatList
-        data={clubs}
-        keyExtractor={(c) => c.id}
-        contentContainerStyle={{ padding: 16 }}
+      <FlatList data={clubs} keyExtractor={c => c.id} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         ListEmptyComponent={
-          <View style={s.empty}>
-            <Text style={s.emptyIcon}>🛡️</Text>
-            <Text style={s.emptyText}>No tienes clubes aun</Text>
-            <Text style={s.emptyHint}>Crea uno para organizar tu equipo</Text>
-          </View>
+          <View style={s.empty}><Text style={{ fontSize: 56 }}>🛡️</Text><Text style={s.emptyT}>Sin clubes</Text><Text style={s.emptyH}>Crea tu equipo y convoca jugadores</Text></View>
         }
-        renderItem={({ item }) => (
-          <View style={s.card}>
-            <View style={s.badge}><Text style={s.badgeEmoji}>🛡️</Text></View>
-            <View style={s.info}>
-              <Text style={s.clubName}>{item.name}</Text>
-              <Text style={s.meta}>{item._count?.members || item.members?.length || 0} jugadores{item.preferredFormation ? ` · ${item.preferredFormation}` : ''}</Text>
-              {item.description && <Text style={s.desc}>{item.description}</Text>}
+        renderItem={({ item, index }) => {
+          const color = CLUB_COLORS[index % CLUB_COLORS.length];
+          return (
+            <View style={s.card}>
+              <View style={[s.cardAccent, { backgroundColor: color }]} />
+              <View style={s.cardBody}>
+                <View style={[s.clubBadge, { backgroundColor: color + '22', borderColor: color }]}>
+                  <Text style={[s.clubInitial, { color }]}>{item.name[0]}</Text>
+                </View>
+                <View style={s.clubInfo}>
+                  <Text style={s.clubName}>{item.name}</Text>
+                  <Text style={s.clubMeta}>👥 {item._count?.members || item.members?.length || 0} jugadores{item.preferredFormation ? ` · 📋 ${item.preferredFormation}` : ''}</Text>
+                  {item.description && <Text style={s.clubDesc} numberOfLines={2}>{item.description}</Text>}
+                </View>
+              </View>
             </View>
-          </View>
-        )}
+          );
+        }}
       />
 
-      {/* Create Club Modal */}
       <Modal visible={showCreate} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
+        <View style={s.modalOv}>
           <View style={s.modal}>
-            <Text style={s.modalTitle}>Crear Club</Text>
-
-            <TextInput style={s.input} placeholder="Nombre del club *" placeholderTextColor="#666" value={newName} onChangeText={setNewName} />
-            <TextInput style={[s.input, { height: 80 }]} placeholder="Descripcion (opcional)" placeholderTextColor="#666" value={newDesc} onChangeText={setNewDesc} multiline />
-
+            <Text style={s.modalT}>🛡️ Crear Club</Text>
+            <TextInput style={s.modalInput} placeholder="Nombre del club *" placeholderTextColor="#555" value={newName} onChangeText={setNewName} />
+            <TextInput style={[s.modalInput, { height: 80 }]} placeholder="Descripción (opcional)" placeholderTextColor="#555" value={newDesc} onChangeText={setNewDesc} multiline />
             <View style={s.modalBtns}>
-              <TouchableOpacity style={s.cancelBtn} onPress={() => setShowCreate(false)}>
-                <Text style={s.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.createBtn} onPress={handleCreate} disabled={creating}>
-                <Text style={s.createText}>{creating ? 'Creando...' : 'Crear'}</Text>
-              </TouchableOpacity>
+              <TouchableOpacity style={s.cancelBtn} onPress={() => setShowCreate(false)}><Text style={s.cancelT}>Cancelar</Text></TouchableOpacity>
+              <TouchableOpacity style={s.createBtn} onPress={handleCreate} disabled={creating}><Text style={s.createT}>{creating ? 'Creando...' : 'Crear'}</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -101,29 +83,34 @@ export function ClubsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f23' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  title: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
-  addBtn: { backgroundColor: '#16db93', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-  addText: { color: '#0f0f23', fontWeight: 'bold' },
-  card: { flexDirection: 'row', backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginBottom: 10, alignItems: 'center' },
-  badge: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  badgeEmoji: { fontSize: 24 },
-  info: { flex: 1 },
-  clubName: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  meta: { color: '#888', fontSize: 13, marginTop: 4 },
-  desc: { color: '#666', fontSize: 12, marginTop: 4 },
+  c: { flex: 1, backgroundColor: COLORS.bg },
+  hero: { height: 120 },
+  heroOv: { flex: 1, backgroundColor: 'rgba(5,5,26,0.75)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  heroT: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  heroBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
+  heroBtnT: { color: COLORS.bg, fontWeight: '800' },
+
+  card: { backgroundColor: COLORS.card, borderRadius: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  cardAccent: { height: 3 },
+  cardBody: { flexDirection: 'row', padding: 16, alignItems: 'center' },
+  clubBadge: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 2 },
+  clubInitial: { fontSize: 22, fontWeight: '900' },
+  clubInfo: { flex: 1 },
+  clubName: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  clubMeta: { color: COLORS.textSecondary, fontSize: 12, marginTop: 4 },
+  clubDesc: { color: COLORS.textMuted, fontSize: 12, marginTop: 4 },
+
   empty: { alignItems: 'center', paddingTop: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  emptyHint: { color: '#666', fontSize: 14, marginTop: 4 },
-  modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)', padding: 24 },
-  modal: { backgroundColor: '#1a1a2e', borderRadius: 16, padding: 24 },
-  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
-  input: { backgroundColor: '#0f0f23', color: '#fff', padding: 14, borderRadius: 10, fontSize: 15, marginBottom: 12 },
+  emptyT: { color: '#fff', fontSize: 20, fontWeight: '800', marginTop: 12 },
+  emptyH: { color: COLORS.textSecondary, fontSize: 14, marginTop: 6 },
+
+  modalOv: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', padding: 24 },
+  modal: { backgroundColor: COLORS.card, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: COLORS.border },
+  modalT: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 20 },
+  modalInput: { backgroundColor: COLORS.bg, color: '#fff', padding: 14, borderRadius: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
   modalBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  cancelBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  cancelText: { color: '#888', fontSize: 16 },
-  createBtn: { flex: 1, backgroundColor: '#16db93', padding: 14, borderRadius: 12, alignItems: 'center' },
-  createText: { color: '#0f0f23', fontWeight: 'bold', fontSize: 16 },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  cancelT: { color: COLORS.textSecondary, fontSize: 15 },
+  createBtn: { flex: 1, backgroundColor: COLORS.primary, padding: 14, borderRadius: 12, alignItems: 'center' },
+  createT: { color: COLORS.bg, fontWeight: '800', fontSize: 15 },
 });

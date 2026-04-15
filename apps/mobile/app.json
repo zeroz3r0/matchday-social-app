@@ -28,7 +28,6 @@
       "permissions": ["ACCESS_FINE_LOCATION"]
     },
     "plugins": [
-      "expo-router",
       "expo-location",
       [
         "expo-image-picker",

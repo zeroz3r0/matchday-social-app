@@ -88,6 +88,9 @@ competitionRoutes.post('/:id/generate-calendar', authenticate, async (req: Reque
 
     const competition = await prisma.competition.findUnique({ where: { id: competitionId } });
     if (!competition) throw new AppError(404, 'NOT_FOUND', 'Competicion no encontrada');
+    if (competition.createdById !== req.user!.userId) {
+      throw new AppError(403, 'FORBIDDEN', 'Solo el creador de la competicion puede generar el calendario');
+    }
 
     const clubs = await prisma.competitionClub.findMany({
       where: { competitionId },
@@ -216,6 +219,9 @@ competitionRoutes.post(
 
       const competition = await prisma.competition.findUnique({ where: { id: competitionId } });
       if (!competition) throw new AppError(404, 'NOT_FOUND', 'Competicion no encontrada');
+      if (competition.createdById !== req.user!.userId) {
+        throw new AppError(403, 'FORBIDDEN', 'Solo el creador de la competicion puede aplazar partidos');
+      }
 
       const match = await prisma.match.findUnique({ where: { id: matchId } });
       if (!match) throw new AppError(404, 'NOT_FOUND', 'Partido no encontrado');

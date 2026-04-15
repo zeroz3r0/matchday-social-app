@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
@@ -24,7 +25,9 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env['CORS_ORIGIN'] || 'http://localhost:19006',
+    origin: process.env['NODE_ENV'] === 'production'
+      ? process.env['CORS_ORIGIN'] || false
+      : true,
     credentials: true,
   }),
 );
@@ -33,6 +36,20 @@ app.use(express.json({ limit: '5mb' }));
 // Only use morgan in non-test environments
 if (process.env['NODE_ENV'] !== 'test') {
   app.use(morgan('dev'));
+}
+
+// ─── Rate Limiting ──────────────────────────────────────────────────────────
+
+if (process.env['NODE_ENV'] !== 'test') {
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { success: false, error: { code: 'RATE_LIMIT', message: 'Demasiadas peticiones, intenta de nuevo mas tarde' } },
+    }),
+  );
 }
 
 // ─── Health Check ───────────────────────────────────────────────────────────

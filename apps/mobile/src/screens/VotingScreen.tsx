@@ -53,15 +53,22 @@ export function VotingScreen({ route, navigation }: any) {
 
     setSubmitting(true);
     try {
-      // Submit each vote
-      for (const player of players) {
-        await voteApi.cast(matchId, {
-          targetPlayerId: player.id,
-          rating: ratings[player.id]!,
-          isMvpVote: player.id === mvpPick,
-        });
+      // Submit all votes in parallel
+      const results = await Promise.allSettled(
+        players.map((player) =>
+          voteApi.cast(matchId, {
+            targetPlayerId: player.id,
+            rating: ratings[player.id]!,
+            isMvpVote: player.id === mvpPick,
+          }),
+        ),
+      );
+      const failures = results.filter((r) => r.status === 'rejected');
+      if (failures.length > 0) {
+        Alert.alert('Error', `${failures.length} voto(s) fallaron. Intenta de nuevo.`);
+      } else {
+        Alert.alert('Votos enviados', 'Gracias por votar!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
       }
-      Alert.alert('Votos enviados', 'Gracias por votar!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {

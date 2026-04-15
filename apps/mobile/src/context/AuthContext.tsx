@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { getItem, setItem, deleteItem } from '../utils/storage';
 import { authApi, userApi } from '../services/api';
 
 interface User {
@@ -38,46 +38,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check stored token on mount
+  // Check stored token on mount — with 5s timeout to avoid hanging
   useEffect(() => {
-    (async () => {
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const init = async () => {
       try {
-        const token = await SecureStore.getItemAsync('auth_token');
+        // Force stop loading after 5 seconds no matter what
+        timeout = setTimeout(() => setIsLoading(false), 5000);
+
+        const token = await getItem('auth_token');
         if (token) {
           const res = await userApi.getMe();
           setUser(res.data);
         }
       } catch {
-        await SecureStore.deleteItemAsync('auth_token');
+        try { await deleteItem('auth_token'); } catch {}
       } finally {
+        clearTimeout(timeout);
         setIsLoading(false);
       }
-    })();
+    };
+
+    init();
+    return () => clearTimeout(timeout);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login(email, password);
-    await SecureStore.setItemAsync('auth_token', res.data.token);
+    await setItem('auth_token', res.data.token);
     setUser(res.data.user);
   }, []);
 
   const register = useCallback(
     async (data: { email: string; password: string; nickname: string; position: string; bio?: string }) => {
       const res = await authApi.register(data);
-      await SecureStore.setItemAsync('auth_token', res.data.token);
+      await setItem('auth_token', res.data.token);
       setUser(res.data.user);
     },
     [],
   );
 
   const logout = useCallback(async () => {
-    await SecureStore.deleteItemAsync('auth_token');
+    try { await deleteItem('auth_token'); } catch {}
     setUser(null);
   }, []);
 
   const refreshUser = useCallback(async () => {
-    const res = await userApi.getMe();
-    setUser(res.data);
+    try {
+      const res = await userApi.getMe();
+      setUser(res.data);
+    } catch {}
   }, []);
 
   return (

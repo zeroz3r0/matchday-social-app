@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { sendMultiplePushNotifications } from '../utils/notifications';
+import { AppError } from '../middleware/errorHandler';
 import { VOTING_WINDOW_HOURS, STAT_AUTO_CONFIRM_HOURS, LEAGUE_POINTS } from '@matchday/shared';
 
 export const matchRoutes = Router();
@@ -49,6 +50,13 @@ matchRoutes.post('/', authenticate, async (req: Request, res: Response, next: Ne
   try {
     const data = createMatchSchema.parse(req.body);
     const userId = req.user!.userId;
+
+    // Validate no player appears in both teams
+    const intersection = data.homeTeam.playerIds.filter((pid) => data.awayTeam.playerIds.includes(pid));
+    if (intersection.length > 0) {
+      throw new AppError(400, 'DUPLICATE_PLAYER', 'Un jugador no puede estar en ambos equipos');
+    }
+
     const scheduledAt = new Date(data.scheduledAt);
     const votingDeadline = new Date(scheduledAt.getTime() + VOTING_WINDOW_HOURS * 60 * 60 * 1000);
 
@@ -121,6 +129,35 @@ matchRoutes.post('/', authenticate, async (req: Request, res: Response, next: Ne
   }
 });
 
+// ─── GET /api/matches/nearby — Discover nearby matches ─────────────────────
+
+matchRoutes.get('/nearby', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { latitude, longitude, radius, limit } = z.object({
+      latitude: z.coerce.number(),
+      longitude: z.coerce.number(),
+      radius: z.coerce.number().default(50), // km
+      limit: z.coerce.number().min(1).max(50).default(20),
+    }).parse(req.query);
+
+    const matches = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT m.*, 
+        (6371 * acos(cos(radians($1)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($2)) + sin(radians($1)) * sin(radians(m.latitude)))) AS distance
+       FROM matches m
+       WHERE m.status = 'SCHEDULED'
+         AND m.scheduled_at > NOW()
+         AND (6371 * acos(cos(radians($1)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($2)) + sin(radians($1)) * sin(radians(m.latitude)))) <= $3
+       ORDER BY m.scheduled_at ASC
+       LIMIT $4`,
+      latitude, longitude, radius, limit,
+    );
+
+    res.json({ success: true, data: matches });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ─── GET /api/matches/:id ──────────────────────────────────────────────────
 
 matchRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
@@ -162,6 +199,27 @@ matchRoutes.post('/:id/complete', authenticate, async (req: Request, res: Respon
 
     const matchId = req.params['id']!;
     const now = new Date();
+
+    // Fetch match first and verify creator + status
+    const existingMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: { teams: true },
+    });
+    if (!existingMatch) throw new AppError(404, 'NOT_FOUND', 'Partido no encontrado');
+    if (existingMatch.createdById !== req.user!.userId) {
+      throw new AppError(403, 'FORBIDDEN', 'Solo el creador del partido puede finalizarlo');
+    }
+    if (existingMatch.status !== 'SCHEDULED' && existingMatch.status !== 'IN_PROGRESS') {
+      throw new AppError(400, 'INVALID_STATUS', 'Solo se pueden finalizar partidos programados o en progreso');
+    }
+
+    // Check tournament draw restriction before completing
+    if (existingMatch.competitionId && homeScore === awayScore) {
+      const competitionCheck = await prisma.competition.findUnique({ where: { id: existingMatch.competitionId } });
+      if (competitionCheck?.type === 'TOURNAMENT') {
+        throw new AppError(400, 'DRAW_NOT_ALLOWED', 'Los torneos no permiten empates');
+      }
+    }
 
     const match = await prisma.match.update({
       where: { id: matchId },
@@ -297,6 +355,14 @@ matchRoutes.post('/:id/stats', authenticate, async (req: Request, res: Response,
     const matchId = req.params['id']!;
     const submittedById = req.user!.userId;
 
+    // Verify submitter is a match participant
+    const submitterPlayer = await prisma.matchPlayer.findFirst({
+      where: { userId: submittedById, matchTeam: { matchId }, invitationStatus: 'ACCEPTED' },
+    });
+    if (!submitterPlayer) {
+      throw new AppError(403, 'NOT_PARTICIPANT', 'Solo los participantes del partido pueden enviar estadisticas');
+    }
+
     // Count total players in match for confirmation threshold
     const totalPlayers = await prisma.matchPlayer.count({
       where: { matchTeam: { matchId }, invitationStatus: 'ACCEPTED' },
@@ -332,8 +398,23 @@ matchRoutes.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { confirmed } = z.object({ confirmed: z.boolean() }).parse(req.body);
-      const { statId } = req.params;
+      const { statId, id: matchId } = req.params;
       const userId = req.user!.userId;
+
+      // Verify user is a match participant
+      const confirmerPlayer = await prisma.matchPlayer.findFirst({
+        where: { userId, matchTeam: { matchId }, invitationStatus: 'ACCEPTED' },
+      });
+      if (!confirmerPlayer) {
+        throw new AppError(403, 'NOT_PARTICIPANT', 'Solo los participantes del partido pueden confirmar estadisticas');
+      }
+
+      // Prevent submitter from self-confirming
+      const stat = await prisma.matchStat.findUnique({ where: { id: statId } });
+      if (!stat) throw new AppError(404, 'NOT_FOUND', 'Estadistica no encontrada');
+      if (userId === stat.submittedById) {
+        throw new AppError(400, 'SELF_CONFIRM', 'No puedes confirmar tus propias estadisticas');
+      }
 
       // Create confirmation
       await prisma.statConfirmation.create({
@@ -342,12 +423,12 @@ matchRoutes.post(
 
       if (confirmed) {
         // Increment counter, check threshold
-        const stat = await prisma.matchStat.update({
+        const updatedStat = await prisma.matchStat.update({
           where: { id: statId },
           data: { confirmationsCount: { increment: 1 } },
         });
 
-        if (stat.confirmationsCount >= stat.requiredConfirmations) {
+        if (updatedStat.confirmationsCount >= updatedStat.requiredConfirmations) {
           await prisma.matchStat.update({
             where: { id: statId },
             data: { validationStatus: 'CONFIRMED' },
@@ -438,35 +519,6 @@ matchRoutes.get('/', authenticate, async (req: Request, res: Response, next: Nex
       data: matches,
       pagination: { total, page: Math.floor(offset / limit) + 1, limit, totalPages: Math.ceil(total / limit) },
     });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ─── GET /api/matches/nearby — Discover nearby matches ─────────────────────
-
-matchRoutes.get('/nearby', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { latitude, longitude, radius, limit } = z.object({
-      latitude: z.coerce.number(),
-      longitude: z.coerce.number(),
-      radius: z.coerce.number().default(50), // km
-      limit: z.coerce.number().min(1).max(50).default(20),
-    }).parse(req.query);
-
-    const matches = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT m.*, 
-        (6371 * acos(cos(radians($1)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($2)) + sin(radians($1)) * sin(radians(m.latitude)))) AS distance
-       FROM matches m
-       WHERE m.status = 'SCHEDULED'
-         AND m.scheduled_at > NOW()
-         AND (6371 * acos(cos(radians($1)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($2)) + sin(radians($1)) * sin(radians(m.latitude)))) <= $3
-       ORDER BY m.scheduled_at ASC
-       LIMIT $4`,
-      latitude, longitude, radius, limit,
-    );
-
-    res.json({ success: true, data: matches });
   } catch (error) {
     next(error);
   }

@@ -69,6 +69,8 @@ export function startScheduledJobs(): void {
           if (!homeTeam || !awayTeam) continue;
 
           const isHomeWinner = (match.homeScore ?? 0) > (match.awayScore ?? 0);
+          const isAwayWinner = (match.awayScore ?? 0) > (match.homeScore ?? 0);
+          const isDraw = (match.homeScore ?? 0) === (match.awayScore ?? 0);
 
           // Get votes + stats
           const mvpVotes = await prisma.playerVote.groupBy({
@@ -91,8 +93,8 @@ export function startScheduledJobs(): void {
               isWinningTeam: isWinning,
             }));
 
-          const homeCandidates = buildCandidates(homeTeam.players, isHomeWinner, homeTeam.id);
-          const awayCandidates = buildCandidates(awayTeam.players, !isHomeWinner, awayTeam.id);
+          const homeCandidates = buildCandidates(homeTeam.players, isDraw ? false : isHomeWinner, homeTeam.id);
+          const awayCandidates = buildCandidates(awayTeam.players, isDraw ? false : isAwayWinner, awayTeam.id);
 
           if (homeCandidates.length === 0 || awayCandidates.length === 0) continue;
 
