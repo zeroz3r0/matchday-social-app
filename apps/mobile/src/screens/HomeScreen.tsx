@@ -1,13 +1,46 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-
-// TODO: Fetch from API
-const MOCK_MATCHES = [
-  { id: '1', homeTeam: 'Los Cracks FC', awayTeam: 'Barrio United', date: '2025-01-20 20:00', gameType: 'F7', status: 'SCHEDULED' },
-  { id: '2', homeTeam: 'Madrid Rovers', awayTeam: 'Los Cracks FC', date: '2025-01-22 21:00', gameType: 'F5', status: 'COMPLETED', score: '4-3' },
-];
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { matchApi } from '../services/api';
 
 export function HomeScreen({ navigation }: any) {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchMatches = useCallback(async () => {
+    try {
+      const res = await matchApi.list();
+      setMatches(res.data);
+    } catch (err) {
+      console.error('Error fetching matches:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchMatches(); }, [fetchMatches]);
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', fetchMatches);
+    return unsub;
+  }, [navigation, fetchMatches]);
+
+  const getTeamName = (match: any, isHome: boolean) =>
+    match.teams?.find((t: any) => t.isHome === isHome)?.name || (isHome ? 'Local' : 'Visitante');
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  if (loading) {
+    return (
+      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#16db93" />
+      </View>
+    );
+  }
+
   return (
     <View style={s.container}>
       <View style={s.header}>
@@ -18,19 +51,31 @@ export function HomeScreen({ navigation }: any) {
       </View>
 
       <FlatList
-        data={MOCK_MATCHES}
+        data={matches}
         keyExtractor={(m) => m.id}
         contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMatches(); }} tintColor="#16db93" />}
+        ListEmptyComponent={
+          <View style={s.empty}>
+            <Text style={s.emptyIcon}>⚽</Text>
+            <Text style={s.emptyText}>No tienes partidos aun</Text>
+            <Text style={s.emptyHint}>Crea uno o espera una invitacion</Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity style={s.card} onPress={() => navigation.navigate('MatchDetail', { matchId: item.id })}>
             <Text style={s.gameType}>{item.gameType}</Text>
-            <Text style={s.teams}>{item.homeTeam} vs {item.awayTeam}</Text>
+            <Text style={s.teams}>{getTeamName(item, true)} vs {getTeamName(item, false)}</Text>
             <View style={s.row}>
-              <Text style={s.date}>{item.date}</Text>
-              {item.score && <Text style={s.score}>{item.score}</Text>}
+              <Text style={s.date}>{formatDate(item.scheduledAt)}</Text>
+              {item.homeScore !== null && item.awayScore !== null && (
+                <Text style={s.score}>{item.homeScore}-{item.awayScore}</Text>
+              )}
             </View>
-            <View style={[s.badge, item.status === 'COMPLETED' ? s.badgeDone : s.badgePending]}>
-              <Text style={s.badgeText}>{item.status === 'COMPLETED' ? 'Finalizado' : 'Programado'}</Text>
+            <View style={[s.badge, item.status === 'COMPLETED' ? s.badgeDone : item.status === 'CANCELLED' ? s.badgeCancelled : s.badgePending]}>
+              <Text style={s.badgeText}>
+                {item.status === 'COMPLETED' ? 'Finalizado' : item.status === 'CANCELLED' ? 'Cancelado' : item.status === 'POSTPONED' ? 'Aplazado' : 'Programado'}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -54,5 +99,10 @@ const s = StyleSheet.create({
   badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginTop: 8 },
   badgeDone: { backgroundColor: '#16db9333' },
   badgePending: { backgroundColor: '#f0a50033' },
+  badgeCancelled: { backgroundColor: '#ff444433' },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+  empty: { alignItems: 'center', paddingTop: 60 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  emptyHint: { color: '#666', fontSize: 14, marginTop: 4 },
 });

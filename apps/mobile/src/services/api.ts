@@ -86,6 +86,12 @@ export const userApi = {
 // ─── Matches ────────────────────────────────────────────────────────────────
 
 export const matchApi = {
+  list: (params?: { status?: string; limit?: number; offset?: number }) => {
+    const qs = params ? '?' + new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
+    ).toString() : '';
+    return request<{ success: true; data: any[]; pagination: any }>(`/matches${qs}`);
+  },
   create: (body: any) =>
     request<{ success: true; data: any }>('/matches', { method: 'POST', body: JSON.stringify(body) }),
   getById: (id: string) => request<{ success: true; data: any }>(`/matches/${id}`),
@@ -99,6 +105,16 @@ export const matchApi = {
       method: 'POST',
       body: JSON.stringify(stats),
     }),
+  confirmStat: (matchId: string, statId: string, confirmed: boolean) =>
+    request<{ success: true }>(`/matches/${matchId}/stats/${statId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ confirmed }),
+    }),
+  respondInvitation: (matchId: string, status: 'ACCEPTED' | 'DECLINED') =>
+    request<{ success: true; data: any }>(`/matches/${matchId}/invitation`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 };
 
 // ─── Votes ──────────────────────────────────────────────────────────────────
@@ -109,6 +125,8 @@ export const voteApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  close: (matchId: string) =>
+    request<{ success: true; data: any }>(`/votes/${matchId}/close`, { method: 'POST' }),
   getResults: (matchId: string) => request<{ success: true; data: any }>(`/votes/${matchId}`),
 };
 
@@ -117,8 +135,31 @@ export const voteApi = {
 export const clubApi = {
   list: () => request<{ success: true; data: any[] }>('/clubs'),
   getById: (id: string) => request<{ success: true; data: any }>(`/clubs/${id}`),
-  create: (body: any) =>
+  create: (body: { name: string; description?: string; preferredFormation?: string }) =>
     request<{ success: true; data: any }>('/clubs', { method: 'POST', body: JSON.stringify(body) }),
+  addMember: (clubId: string, userId: string, role?: string) =>
+    request<{ success: true; data: any }>(`/clubs/${clubId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, role: role || 'PLAYER' }),
+    }),
+};
+
+// ─── Competitions ───────────────────────────────────────────────────────────
+
+export const competitionApi = {
+  create: (body: any) =>
+    request<{ success: true; data: any }>('/competitions', { method: 'POST', body: JSON.stringify(body) }),
+  registerClub: (competitionId: string, clubId: string) =>
+    request<{ success: true; data: any }>(`/competitions/${competitionId}/register`, {
+      method: 'POST',
+      body: JSON.stringify({ clubId }),
+    }),
+  generateCalendar: (competitionId: string) =>
+    request<{ success: true }>(`/competitions/${competitionId}/generate-calendar`, { method: 'POST' }),
+  getStandings: (competitionId: string) =>
+    request<{ success: true; data: any[] }>(`/competitions/${competitionId}/standings`),
+  getBrackets: (competitionId: string) =>
+    request<{ success: true; data: any[] }>(`/competitions/${competitionId}/brackets`),
 };
 
 // ─── Rankings ───────────────────────────────────────────────────────────────

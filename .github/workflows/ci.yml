@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Build shared package first (other packages depend on it)
+      - run: npm run shared:build
+
+      # Run all tests (shared + API)
+      - run: npm test
+
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run shared:build
+      - run: npm run lint
+      - run: npm run typecheck
+
+  api-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run shared:build
+      - run: npm run api:build

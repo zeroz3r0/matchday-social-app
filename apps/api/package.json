@@ -10,9 +10,12 @@
     "db:migrate:prod": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@matchday/shared": "*",
     "@prisma/client": "^5.12.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -24,8 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "zod": "^3.22.0",
-    "@matchday/shared": "*"
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -35,8 +37,11 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.11.0",
     "@types/node-cron": "^3.0.11",
+    "@types/supertest": "^7.2.0",
     "prisma": "^5.12.0",
+    "supertest": "^7.2.2",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.4"
   }
 }

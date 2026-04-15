@@ -7,10 +7,13 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
+    "rimraf": "^5.0.0",
     "typescript": "^5.4.0",
-    "rimraf": "^5.0.0"
+    "vitest": "^4.1.4"
   }
 }
