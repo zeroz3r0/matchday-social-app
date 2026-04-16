@@ -83,7 +83,11 @@ export function startScheduledJobs(): void {
             where: { matchId: match.id, validationStatus: { in: ['CONFIRMED', 'AUTO_CONFIRMED'] } },
           });
 
-          const buildCandidates = (players: { userId: string }[], isWinning: boolean, teamId: string) =>
+          const buildCandidates = (
+            players: { userId: string }[],
+            isWinning: boolean,
+            teamId: string,
+          ) =>
             players.map((p) => ({
               playerId: p.userId,
               teamId,
@@ -93,8 +97,16 @@ export function startScheduledJobs(): void {
               isWinningTeam: isWinning,
             }));
 
-          const homeCandidates = buildCandidates(homeTeam.players, isDraw ? false : isHomeWinner, homeTeam.id);
-          const awayCandidates = buildCandidates(awayTeam.players, isDraw ? false : isAwayWinner, awayTeam.id);
+          const homeCandidates = buildCandidates(
+            homeTeam.players,
+            isDraw ? false : isHomeWinner,
+            homeTeam.id,
+          );
+          const awayCandidates = buildCandidates(
+            awayTeam.players,
+            isDraw ? false : isAwayWinner,
+            awayTeam.id,
+          );
 
           if (homeCandidates.length === 0 || awayCandidates.length === 0) continue;
 

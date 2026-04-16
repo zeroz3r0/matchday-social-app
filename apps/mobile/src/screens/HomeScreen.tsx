@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+  ImageBackground,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi } from '../services/api';
 import { C, IMG, GAME_COLORS, STATUS } from '../utils/theme';
@@ -10,20 +19,41 @@ export function HomeScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchMatches = useCallback(async () => {
-    try { const r = await matchApi.list(); setMatches(r.data); } catch {}
-    finally { setLoading(false); setRefreshing(false); }
+    try {
+      const r = await matchApi.list();
+      setMatches(r.data);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => { fetchMatches(); }, [fetchMatches]);
-  useEffect(() => { const u = navigation.addListener('focus', fetchMatches); return u; }, [navigation, fetchMatches]);
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
+  useEffect(() => {
+    const u = navigation.addListener('focus', fetchMatches);
+    return u;
+  }, [navigation, fetchMatches]);
 
-  const team = (m: any, home: boolean) => m.teams?.find((t: any) => t.isHome === home)?.name || (home ? 'Local' : 'Visitante');
+  const team = (m: any, home: boolean) =>
+    m.teams?.find((t: any) => t.isHome === home)?.name || (home ? 'Local' : 'Visitante');
   const fmtDate = (iso: string) => {
     const d = new Date(iso);
-    return { day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }), time: d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) };
+    return {
+      day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }),
+      time: d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+    };
   };
 
-  if (loading) return <View style={[s.c, s.ctr]}><ActivityIndicator size="large" color={C.primary} /></View>;
+  if (loading)
+    return (
+      <View style={[s.c, s.ctr]}>
+        <ActivityIndicator size="large" color={C.primary} />
+      </View>
+    );
 
   return (
     <View style={s.c}>
@@ -32,7 +62,9 @@ export function HomeScreen({ navigation }: any) {
         <View style={s.heroOv}>
           <View>
             <Text style={s.heroT}>Partidos</Text>
-            <Text style={s.heroS}>{matches.length} {matches.length === 1 ? 'encuentro' : 'encuentros'}</Text>
+            <Text style={s.heroS}>
+              {matches.length} {matches.length === 1 ? 'encuentro' : 'encuentros'}
+            </Text>
           </View>
           <TouchableOpacity style={s.heroBtn} onPress={() => navigation.navigate('CreateMatch')}>
             <Ionicons name="add" size={20} color={C.bg} />
@@ -41,8 +73,20 @@ export function HomeScreen({ navigation }: any) {
         </View>
       </ImageBackground>
 
-      <FlatList data={matches} keyExtractor={m => m.id} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMatches(); }} tintColor={C.primary} />}
+      <FlatList
+        data={matches}
+        keyExtractor={(m) => m.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchMatches();
+            }}
+            tintColor={C.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="football-outline" size={56} color={C.t3} />
@@ -60,38 +104,64 @@ export function HomeScreen({ navigation }: any) {
           const hasScore = item.homeScore != null;
 
           return (
-            <TouchableOpacity style={s.card} onPress={() => navigation.navigate('MatchDetail', { matchId: item.id })} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={s.card}
+              onPress={() => navigation.navigate('MatchDetail', { matchId: item.id })}
+              activeOpacity={0.7}
+            >
               <View style={[s.accentBar, { backgroundColor: gc.accent }]} />
               <View style={s.cardBody}>
                 {/* Header */}
                 <View style={s.cardHead}>
-                  <View style={[s.tag, { backgroundColor: gc.bg }]}><Text style={[s.tagT, { color: gc.accent }]}>{item.gameType}</Text></View>
-                  <View style={[s.tag, { backgroundColor: st.bg }]}><Text style={[s.tagT, { color: st.color }]}>{st.label}</Text></View>
+                  <View style={[s.tag, { backgroundColor: gc.bg }]}>
+                    <Text style={[s.tagT, { color: gc.accent }]}>{item.gameType}</Text>
+                  </View>
+                  <View style={[s.tag, { backgroundColor: st.bg }]}>
+                    <Text style={[s.tagT, { color: st.color }]}>{st.label}</Text>
+                  </View>
                 </View>
 
                 {/* Scoreboard */}
                 <View style={s.board}>
                   <View style={s.side}>
-                    <View style={s.shield}><Ionicons name="shirt" size={22} color={C.t2} /></View>
-                    <Text style={s.teamN} numberOfLines={1}>{team(item, true)}</Text>
+                    <View style={s.shield}>
+                      <Ionicons name="shirt" size={22} color={C.t2} />
+                    </View>
+                    <Text style={s.teamN} numberOfLines={1}>
+                      {team(item, true)}
+                    </Text>
                   </View>
                   <View style={s.mid}>
                     {hasScore ? (
-                      <Text style={s.score}>{item.homeScore} — {item.awayScore}</Text>
+                      <Text style={s.score}>
+                        {item.homeScore} — {item.awayScore}
+                      </Text>
                     ) : (
-                      <View style={s.timeBox}><Text style={s.timeT}>{time}</Text></View>
+                      <View style={s.timeBox}>
+                        <Text style={s.timeT}>{time}</Text>
+                      </View>
                     )}
                   </View>
                   <View style={[s.side, { alignItems: 'flex-end' }]}>
-                    <View style={s.shield}><Ionicons name="shirt-outline" size={22} color={C.t2} /></View>
-                    <Text style={[s.teamN, { textAlign: 'right' }]} numberOfLines={1}>{team(item, false)}</Text>
+                    <View style={s.shield}>
+                      <Ionicons name="shirt-outline" size={22} color={C.t2} />
+                    </View>
+                    <Text style={[s.teamN, { textAlign: 'right' }]} numberOfLines={1}>
+                      {team(item, false)}
+                    </Text>
                   </View>
                 </View>
 
                 {/* Footer */}
                 <View style={s.foot}>
-                  <View style={s.footItem}><Ionicons name="calendar-outline" size={13} color={C.t3} /><Text style={s.footT}>{day}</Text></View>
-                  <View style={s.footItem}><Ionicons name="location-outline" size={13} color={C.t3} /><Text style={s.footT}>{item.locationName || 'Por definir'}</Text></View>
+                  <View style={s.footItem}>
+                    <Ionicons name="calendar-outline" size={13} color={C.t3} />
+                    <Text style={s.footT}>{day}</Text>
+                  </View>
+                  <View style={s.footItem}>
+                    <Ionicons name="location-outline" size={13} color={C.t3} />
+                    <Text style={s.footT}>{item.locationName || 'Por definir'}</Text>
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -103,15 +173,38 @@ export function HomeScreen({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  c: { flex: 1, backgroundColor: C.bg }, ctr: { justifyContent: 'center', alignItems: 'center' },
+  c: { flex: 1, backgroundColor: C.bg },
+  ctr: { justifyContent: 'center', alignItems: 'center' },
   hero: { height: 130 },
-  heroOv: { flex: 1, backgroundColor: 'rgba(11,14,26,0.8)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  heroOv: {
+    flex: 1,
+    backgroundColor: 'rgba(11,14,26,0.8)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
   heroT: { color: C.w, fontSize: 24, fontWeight: '800' },
   heroS: { color: C.t2, fontSize: 13, marginTop: 2 },
-  heroBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  heroBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: C.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   heroBtnT: { color: C.bg, fontWeight: '700', fontSize: 13 },
 
-  card: { backgroundColor: C.card, borderRadius: 14, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
   accentBar: { height: 3 },
   cardBody: { padding: 16 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
@@ -120,20 +213,45 @@ const s = StyleSheet.create({
 
   board: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   side: { flex: 1 },
-  shield: { width: 40, height: 40, borderRadius: 10, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  shield: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: C.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   teamN: { color: C.t1, fontSize: 13, fontWeight: '700' },
   mid: { paddingHorizontal: 12, alignItems: 'center' },
   score: { color: C.w, fontSize: 28, fontWeight: '900', letterSpacing: 2 },
-  timeBox: { backgroundColor: C.surface, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8 },
+  timeBox: {
+    backgroundColor: C.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
   timeT: { color: C.blue, fontSize: 14, fontWeight: '800' },
 
-  foot: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 },
+  foot: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    paddingTop: 10,
+  },
   footItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   footT: { color: C.t3, fontSize: 11 },
 
   empty: { alignItems: 'center', paddingTop: 70 },
   emptyT: { color: C.t1, fontSize: 20, fontWeight: '700', marginTop: 16 },
   emptyH: { color: C.t2, fontSize: 13, marginTop: 6 },
-  emptyBtn: { backgroundColor: C.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginTop: 20 },
+  emptyBtn: {
+    backgroundColor: C.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 20,
+  },
   emptyBtnT: { color: C.bg, fontWeight: '700' },
 });

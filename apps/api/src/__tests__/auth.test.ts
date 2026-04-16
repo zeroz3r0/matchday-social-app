@@ -43,14 +43,12 @@ describe('Auth Routes', () => {
 
       (prisma.user.create as any).mockResolvedValue(mockUser);
 
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@test.com',
-          password: 'password123',
-          nickname: 'TestUser',
-          position: 'FORWARD',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test@test.com',
+        password: 'password123',
+        nickname: 'TestUser',
+        position: 'FORWARD',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -59,14 +57,12 @@ describe('Auth Routes', () => {
     });
 
     it('rejects short password', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@test.com',
-          password: '123',
-          nickname: 'TestUser',
-          position: 'FORWARD',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test@test.com',
+        password: '123',
+        nickname: 'TestUser',
+        position: 'FORWARD',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -74,40 +70,34 @@ describe('Auth Routes', () => {
     });
 
     it('rejects invalid email', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'not-an-email',
-          password: 'password123',
-          nickname: 'TestUser',
-          position: 'FORWARD',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'not-an-email',
+        password: 'password123',
+        nickname: 'TestUser',
+        position: 'FORWARD',
+      });
 
       expect(res.status).toBe(400);
     });
 
     it('rejects invalid position', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@test.com',
-          password: 'password123',
-          nickname: 'TestUser',
-          position: 'STRIKER', // Invalid
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test@test.com',
+        password: 'password123',
+        nickname: 'TestUser',
+        position: 'STRIKER', // Invalid
+      });
 
       expect(res.status).toBe(400);
     });
 
     it('rejects nickname with spaces', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@test.com',
-          password: 'password123',
-          nickname: 'Test User',
-          position: 'FORWARD',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test@test.com',
+        password: 'password123',
+        nickname: 'Test User',
+        position: 'FORWARD',
+      });
 
       expect(res.status).toBe(400);
     });
@@ -171,9 +161,7 @@ describe('Auth Routes', () => {
     });
 
     it('rejects empty body', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({});
+      const res = await request(app).post('/api/auth/login').send({});
 
       expect(res.status).toBe(400);
     });

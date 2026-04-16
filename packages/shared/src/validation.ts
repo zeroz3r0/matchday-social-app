@@ -102,9 +102,7 @@ export function validateSquadSize(gameType: GameType, squadSize: number): Valida
   const minSize = MIN_SQUAD_SIZE[gameType];
 
   if (squadSize < minSize) {
-    errors.push(
-      `El ${gameType} requiere un minimo de ${minSize} jugadores. Tienes ${squadSize}.`,
-    );
+    errors.push(`El ${gameType} requiere un minimo de ${minSize} jugadores. Tienes ${squadSize}.`);
   }
 
   return { valid: errors.length === 0, errors };
@@ -116,12 +114,7 @@ export function validateSquadSize(gameType: GameType, squadSize: number): Valida
  * Calcula la distancia entre dos puntos usando la formula Haversine.
  * Devuelve la distancia en kilometros.
  */
-export function haversineDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
+export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radio de la Tierra en km
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);

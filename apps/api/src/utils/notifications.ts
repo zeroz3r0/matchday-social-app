@@ -21,7 +21,7 @@ export interface NotificationPayload {
 
 /**
  * Enviar push notification a un dispositivo via FCM.
- * 
+ *
  * NOTA: Requiere configurar Firebase Admin SDK con credenciales reales.
  * En desarrollo, simplemente logueamos el intento.
  */
@@ -56,8 +56,6 @@ export async function sendMultiplePushNotifications(
   payload: NotificationPayload,
 ): Promise<void> {
   const validTokens = fcmTokens.filter(Boolean);
-  
-  await Promise.allSettled(
-    validTokens.map((token) => sendPushNotification(token, payload)),
-  );
+
+  await Promise.allSettled(validTokens.map((token) => sendPushNotification(token, payload)));
 }

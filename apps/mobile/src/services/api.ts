@@ -10,10 +10,7 @@ async function getToken(): Promise<string | null> {
   return getItem('auth_token');
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
 
   const headers: Record<string, string> = {
@@ -43,7 +40,11 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, data.error?.code || 'UNKNOWN', data.error?.message || 'Error desconocido');
+    throw new ApiError(
+      response.status,
+      data.error?.code || 'UNKNOWN',
+      data.error?.message || 'Error desconocido',
+    );
   }
 
   return data;
@@ -69,10 +70,11 @@ export const authApi = {
     nickname: string;
     position: string;
     bio?: string;
-  }) => request<{ success: true; data: { user: any; token: string } }>('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  }),
+  }) =>
+    request<{ success: true; data: { user: any; token: string } }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   login: (email: string, password: string) =>
     request<{ success: true; data: { user: any; token: string } }>('/auth/login', {
@@ -97,13 +99,21 @@ export const userApi = {
 
 export const matchApi = {
   list: (params?: { status?: string; limit?: number; offset?: number }) => {
-    const qs = params ? '?' + new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
-    ).toString() : '';
+    const qs = params
+      ? '?' +
+        new URLSearchParams(
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [k, String(v)]),
+        ).toString()
+      : '';
     return request<{ success: true; data: any[]; pagination: any }>(`/matches${qs}`);
   },
   create: (body: any) =>
-    request<{ success: true; data: any }>('/matches', { method: 'POST', body: JSON.stringify(body) }),
+    request<{ success: true; data: any }>('/matches', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   getById: (id: string) => request<{ success: true; data: any }>(`/matches/${id}`),
   complete: (id: string, homeScore: number, awayScore: number) =>
     request<{ success: true; data: any }>(`/matches/${id}/complete`, {
@@ -158,14 +168,19 @@ export const clubApi = {
 
 export const competitionApi = {
   create: (body: any) =>
-    request<{ success: true; data: any }>('/competitions', { method: 'POST', body: JSON.stringify(body) }),
+    request<{ success: true; data: any }>('/competitions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   registerClub: (competitionId: string, clubId: string) =>
     request<{ success: true; data: any }>(`/competitions/${competitionId}/register`, {
       method: 'POST',
       body: JSON.stringify({ clubId }),
     }),
   generateCalendar: (competitionId: string) =>
-    request<{ success: true }>(`/competitions/${competitionId}/generate-calendar`, { method: 'POST' }),
+    request<{ success: true }>(`/competitions/${competitionId}/generate-calendar`, {
+      method: 'POST',
+    }),
   getStandings: (competitionId: string) =>
     request<{ success: true; data: any[] }>(`/competitions/${competitionId}/standings`),
   getBrackets: (competitionId: string) =>

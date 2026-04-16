@@ -21,17 +21,13 @@ describe('Auth Middleware', () => {
   });
 
   it('rejects request with Bearer but no token', async () => {
-    const res = await request(app)
-      .get('/api/users/me')
-      .set('Authorization', 'Bearer ');
+    const res = await request(app).get('/api/users/me').set('Authorization', 'Bearer ');
 
     expect(res.status).toBe(401);
   });
 
   it('rejects non-Bearer auth header', async () => {
-    const res = await request(app)
-      .get('/api/users/me')
-      .set('Authorization', 'Basic dXNlcjpwYXNz');
+    const res = await request(app).get('/api/users/me').set('Authorization', 'Basic dXNlcjpwYXNz');
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('UNAUTHORIZED');

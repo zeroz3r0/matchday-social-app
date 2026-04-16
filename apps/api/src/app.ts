@@ -25,9 +25,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env['NODE_ENV'] === 'production'
-      ? process.env['CORS_ORIGIN'] || false
-      : true,
+    origin: process.env['NODE_ENV'] === 'production' ? process.env['CORS_ORIGIN'] || false : true,
     credentials: true,
   }),
 );
@@ -47,7 +45,10 @@ if (process.env['NODE_ENV'] !== 'test') {
       max: 100,
       standardHeaders: true,
       legacyHeaders: false,
-      message: { success: false, error: { code: 'RATE_LIMIT', message: 'Demasiadas peticiones, intenta de nuevo mas tarde' } },
+      message: {
+        success: false,
+        error: { code: 'RATE_LIMIT', message: 'Demasiadas peticiones, intenta de nuevo mas tarde' },
+      },
     }),
   );
 }

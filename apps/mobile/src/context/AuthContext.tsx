@@ -53,7 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(res.data);
         }
       } catch {
-        try { await deleteItem('auth_token'); } catch {}
+        try {
+          await deleteItem('auth_token');
+        } catch {
+          /* ignore */
+        }
       } finally {
         clearTimeout(timeout);
         setIsLoading(false);
@@ -71,7 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (data: { email: string; password: string; nickname: string; position: string; bio?: string }) => {
+    async (data: {
+      email: string;
+      password: string;
+      nickname: string;
+      position: string;
+      bio?: string;
+    }) => {
       const res = await authApi.register(data);
       await setItem('auth_token', res.data.token);
       setUser(res.data.user);
@@ -80,7 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    try { await deleteItem('auth_token'); } catch {}
+    try {
+      await deleteItem('auth_token');
+    } catch {
+      /* ignore */
+    }
     setUser(null);
   }, []);
 
@@ -88,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await userApi.getMe();
       setUser(res.data);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return (

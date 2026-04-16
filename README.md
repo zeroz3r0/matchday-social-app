@@ -19,18 +19,18 @@ matchday-social-app/
 
 ### Stack Tecnico
 
-| Capa | Tecnologia |
-|------|-----------|
-| Mobile | React Native 0.73 + Expo 50 |
-| Navigation | React Navigation 6 (Stack + Bottom Tabs) |
-| Backend | Node.js + Express + TypeScript |
-| Base de Datos | PostgreSQL + PostGIS (extension geoespacial) |
-| ORM | Prisma 5 |
-| Auth | JWT (jsonwebtoken) + bcrypt |
-| Validacion | Zod |
-| Push Notifications | Firebase Cloud Messaging (FCM) |
-| Maps | Google Maps API + react-native-maps |
-| Cron Jobs | node-cron |
+| Capa               | Tecnologia                                   |
+| ------------------ | -------------------------------------------- |
+| Mobile             | React Native 0.73 + Expo 50                  |
+| Navigation         | React Navigation 6 (Stack + Bottom Tabs)     |
+| Backend            | Node.js + Express + TypeScript               |
+| Base de Datos      | PostgreSQL + PostGIS (extension geoespacial) |
+| ORM                | Prisma 5                                     |
+| Auth               | JWT (jsonwebtoken) + bcrypt                  |
+| Validacion         | Zod                                          |
+| Push Notifications | Firebase Cloud Messaging (FCM)               |
+| Maps               | Google Maps API + react-native-maps          |
+| Cron Jobs          | node-cron                                    |
 
 ---
 
@@ -317,81 +317,88 @@ npm run mobile:android
 
 ### Variables de Entorno Requeridas
 
-| Variable | Descripcion |
-|----------|------------|
-| `DATABASE_URL` | Connection string PostgreSQL |
-| `JWT_SECRET` | Clave secreta para tokens JWT |
-| `JWT_EXPIRES_IN` | Expiracion del token (default: 7d) |
-| `FIREBASE_PROJECT_ID` | ID proyecto Firebase (push notifications) |
-| `FIREBASE_PRIVATE_KEY` | Clave privada Firebase |
-| `FIREBASE_CLIENT_EMAIL` | Email del service account Firebase |
-| `GOOGLE_MAPS_API_KEY` | API key de Google Maps |
-| `PORT` | Puerto del servidor (default: 3000) |
+| Variable                | Descripcion                               |
+| ----------------------- | ----------------------------------------- |
+| `DATABASE_URL`          | Connection string PostgreSQL              |
+| `JWT_SECRET`            | Clave secreta para tokens JWT             |
+| `JWT_EXPIRES_IN`        | Expiracion del token (default: 7d)        |
+| `FIREBASE_PROJECT_ID`   | ID proyecto Firebase (push notifications) |
+| `FIREBASE_PRIVATE_KEY`  | Clave privada Firebase                    |
+| `FIREBASE_CLIENT_EMAIL` | Email del service account Firebase        |
+| `GOOGLE_MAPS_API_KEY`   | API key de Google Maps                    |
+| `PORT`                  | Puerto del servidor (default: 3000)       |
 
 ---
 
 ## API Endpoints
 
 ### Auth
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| POST | `/api/auth/register` | Registro con nickname, email, posicion |
-| POST | `/api/auth/login` | Login, devuelve JWT |
+
+| Method | Endpoint             | Descripcion                            |
+| ------ | -------------------- | -------------------------------------- |
+| POST   | `/api/auth/register` | Registro con nickname, email, posicion |
+| POST   | `/api/auth/login`    | Login, devuelve JWT                    |
 
 ### Users
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| GET | `/api/users/me` | Perfil propio + medallas + stats |
-| GET | `/api/users/:id` | Perfil publico |
-| PATCH | `/api/users/me` | Actualizar perfil |
+
+| Method | Endpoint         | Descripcion                      |
+| ------ | ---------------- | -------------------------------- |
+| GET    | `/api/users/me`  | Perfil propio + medallas + stats |
+| GET    | `/api/users/:id` | Perfil publico                   |
+| PATCH  | `/api/users/me`  | Actualizar perfil                |
 
 ### Matches
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| POST | `/api/matches` | Crear partido + invitar jugadores |
-| GET | `/api/matches/:id` | Detalle del partido |
-| POST | `/api/matches/:id/complete` | Finalizar + abrir votacion |
-| POST | `/api/matches/:id/stats` | Subir estadisticas (pending) |
-| POST | `/api/matches/:id/stats/:statId/confirm` | Confirmar/disputar stat |
+
+| Method | Endpoint                                 | Descripcion                       |
+| ------ | ---------------------------------------- | --------------------------------- |
+| POST   | `/api/matches`                           | Crear partido + invitar jugadores |
+| GET    | `/api/matches/:id`                       | Detalle del partido               |
+| POST   | `/api/matches/:id/complete`              | Finalizar + abrir votacion        |
+| POST   | `/api/matches/:id/stats`                 | Subir estadisticas (pending)      |
+| POST   | `/api/matches/:id/stats/:statId/confirm` | Confirmar/disputar stat           |
 
 ### Votes
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| POST | `/api/votes/:matchId` | Votar nota + MVP |
-| POST | `/api/votes/:matchId/close` | Cerrar votacion + calcular MVP |
-| GET | `/api/votes/:matchId` | Resumen de votos |
+
+| Method | Endpoint                    | Descripcion                    |
+| ------ | --------------------------- | ------------------------------ |
+| POST   | `/api/votes/:matchId`       | Votar nota + MVP               |
+| POST   | `/api/votes/:matchId/close` | Cerrar votacion + calcular MVP |
+| GET    | `/api/votes/:matchId`       | Resumen de votos               |
 
 ### Clubs
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| POST | `/api/clubs` | Crear club |
-| GET | `/api/clubs` | Listar mis clubes |
-| GET | `/api/clubs/:id` | Detalle del club |
-| POST | `/api/clubs/:id/members` | Añadir miembro |
+
+| Method | Endpoint                 | Descripcion       |
+| ------ | ------------------------ | ----------------- |
+| POST   | `/api/clubs`             | Crear club        |
+| GET    | `/api/clubs`             | Listar mis clubes |
+| GET    | `/api/clubs/:id`         | Detalle del club  |
+| POST   | `/api/clubs/:id/members` | Añadir miembro    |
 
 ### Competitions
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| POST | `/api/competitions` | Crear liga/torneo |
-| POST | `/api/competitions/:id/register` | Inscribir club |
-| POST | `/api/competitions/:id/generate-calendar` | Generar calendario/brackets |
-| GET | `/api/competitions/:id/standings` | Clasificacion liga |
-| GET | `/api/competitions/:id/brackets` | Cuadro torneo |
-| POST | `/api/competitions/:id/postpone/:matchId` | Aplazar partido |
+
+| Method | Endpoint                                  | Descripcion                 |
+| ------ | ----------------------------------------- | --------------------------- |
+| POST   | `/api/competitions`                       | Crear liga/torneo           |
+| POST   | `/api/competitions/:id/register`          | Inscribir club              |
+| POST   | `/api/competitions/:id/generate-calendar` | Generar calendario/brackets |
+| GET    | `/api/competitions/:id/standings`         | Clasificacion liga          |
+| GET    | `/api/competitions/:id/brackets`          | Cuadro torneo               |
+| POST   | `/api/competitions/:id/postpone/:matchId` | Aplazar partido             |
 
 ### Rankings
-| Method | Endpoint | Descripcion |
-|--------|---------|------------|
-| GET | `/api/rankings?category=GOALS&scope=LOCAL&lat=40.41&lon=-3.70` | Ladderboard |
+
+| Method | Endpoint                                                       | Descripcion |
+| ------ | -------------------------------------------------------------- | ----------- |
+| GET    | `/api/rankings?category=GOALS&scope=LOCAL&lat=40.41&lon=-3.70` | Ladderboard |
 
 ---
 
 ## Cron Jobs Automaticos
 
-| Job | Frecuencia | Accion |
-|-----|-----------|--------|
-| Auto-confirm stats | Cada 5 min | Stats PENDING con `autoConfirmAt` expirado → AUTO_CONFIRMED |
-| Auto-close voting | Cada 5 min | Partidos con `votingDeadline` expirado sin MvpResult → Calcula MVP |
+| Job                | Frecuencia | Accion                                                             |
+| ------------------ | ---------- | ------------------------------------------------------------------ |
+| Auto-confirm stats | Cada 5 min | Stats PENDING con `autoConfirmAt` expirado → AUTO_CONFIRMED        |
+| Auto-close voting  | Cada 5 min | Partidos con `votingDeadline` expirado sin MvpResult → Calcula MVP |
 
 ---
 

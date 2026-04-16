@@ -31,10 +31,10 @@ export const C = {
 
   // Text
   w: '#FFFFFF',
-  t1: '#E2E8F0',  // primary text
-  t2: '#94A3B8',  // secondary
-  t3: '#475569',  // muted/disabled
-  t4: '#334155',  // very muted
+  t1: '#E2E8F0', // primary text
+  t2: '#94A3B8', // secondary
+  t3: '#475569', // muted/disabled
+  t4: '#334155', // very muted
 
   // Borders
   border: '#1E293B',

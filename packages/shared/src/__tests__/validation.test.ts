@@ -229,9 +229,7 @@ describe('resolveMvp', () => {
   });
 
   it('single candidate wins', () => {
-    const candidates: MvpCandidate[] = [
-      { ...base, playerId: 'solo' },
-    ];
+    const candidates: MvpCandidate[] = [{ ...base, playerId: 'solo' }];
     expect(resolveMvp(candidates).playerId).toBe('solo');
   });
 });

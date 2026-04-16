@@ -57,11 +57,7 @@ userRoutes.get('/me', authenticate, async (req: Request, res: Response, next: Ne
     // Count MVP awards
     const mvpCount = await prisma.mvpResult.count({
       where: {
-        OR: [
-          { homeTeamMvpId: userId },
-          { awayTeamMvpId: userId },
-          { globalMvpId: userId },
-        ],
+        OR: [{ homeTeamMvpId: userId }, { awayTeamMvpId: userId }, { globalMvpId: userId }],
       },
     });
 
@@ -85,9 +81,7 @@ userRoutes.get('/me', authenticate, async (req: Request, res: Response, next: Ne
           matchesPlayed: medals._count,
         },
         stats: {
-          avgRating: avgRating._avg.rating
-            ? Math.round(avgRating._avg.rating * 10) / 10
-            : 0,
+          avgRating: avgRating._avg.rating ? Math.round(avgRating._avg.rating * 10) / 10 : 0,
           totalVotesReceived: avgRating._count,
         },
       },
@@ -135,11 +129,7 @@ userRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
 
     const mvpCount = await prisma.mvpResult.count({
       where: {
-        OR: [
-          { homeTeamMvpId: id },
-          { awayTeamMvpId: id },
-          { globalMvpId: id },
-        ],
+        OR: [{ homeTeamMvpId: id }, { awayTeamMvpId: id }, { globalMvpId: id }],
       },
     });
 
@@ -162,9 +152,7 @@ userRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
           matchesPlayed: medals._count,
         },
         stats: {
-          avgRating: avgRating._avg.rating
-            ? Math.round(avgRating._avg.rating * 10) / 10
-            : 0,
+          avgRating: avgRating._avg.rating ? Math.round(avgRating._avg.rating * 10) / 10 : 0,
           totalVotesReceived: avgRating._count,
         },
       },
@@ -177,7 +165,12 @@ userRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
 // ─── PATCH /api/users/me — Actualizar perfil ───────────────────────────────
 
 const updateProfileSchema = z.object({
-  nickname: z.string().min(3).max(24).regex(/^[a-zA-Z0-9_.-]+$/).optional(),
+  nickname: z
+    .string()
+    .min(3)
+    .max(24)
+    .regex(/^[a-zA-Z0-9_.-]+$/)
+    .optional(),
   avatarUrl: z.string().url().optional(),
   position: z.enum(['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD']).optional(),
   bio: z.string().max(280).optional(),

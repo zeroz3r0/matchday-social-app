@@ -18,12 +18,7 @@ export class AppError extends Error {
   }
 }
 
-export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error('[ERROR]', err);
 
   // ─── App Errors (known) ─────────────────────────────────────────────
@@ -91,9 +86,7 @@ export function errorHandler(
     error: {
       code: 'INTERNAL_ERROR',
       message:
-        process.env['NODE_ENV'] === 'production'
-          ? 'Error interno del servidor'
-          : err.message,
+        process.env['NODE_ENV'] === 'production' ? 'Error interno del servidor' : err.message,
     },
   });
 }

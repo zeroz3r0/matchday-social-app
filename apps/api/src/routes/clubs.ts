@@ -57,7 +57,9 @@ clubRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
     });
 
     if (!club) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Club no encontrado' } });
+      res
+        .status(404)
+        .json({ success: false, error: { code: 'NOT_FOUND', message: 'Club no encontrado' } });
       return;
     }
 
@@ -69,33 +71,43 @@ clubRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
 
 // ─── POST /api/clubs/:id/members — Add member ──────────────────────────────
 
-clubRoutes.post('/:id/members', authenticate, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const requesterId = req.user!.userId;
-    const clubId = req.params['id']!;
+clubRoutes.post(
+  '/:id/members',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const requesterId = req.user!.userId;
+      const clubId = req.params['id']!;
 
-    // Verify requester is ADMIN of the club
-    const requesterMember = await prisma.clubMember.findFirst({
-      where: { clubId, userId: requesterId, role: 'ADMIN' },
-    });
-    if (!requesterMember) {
-      throw new AppError(403, 'FORBIDDEN', 'Solo los administradores del club pueden agregar miembros');
+      // Verify requester is ADMIN of the club
+      const requesterMember = await prisma.clubMember.findFirst({
+        where: { clubId, userId: requesterId, role: 'ADMIN' },
+      });
+      if (!requesterMember) {
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Solo los administradores del club pueden agregar miembros',
+        );
+      }
+
+      const { userId, role } = z
+        .object({
+          userId: z.string(),
+          role: z.enum(['CAPTAIN', 'PLAYER']).default('PLAYER'),
+        })
+        .parse(req.body);
+
+      const member = await prisma.clubMember.create({
+        data: { clubId: req.params['id']!, userId, role },
+      });
+
+      res.status(201).json({ success: true, data: member });
+    } catch (error) {
+      next(error);
     }
-
-    const { userId, role } = z.object({
-      userId: z.string(),
-      role: z.enum(['CAPTAIN', 'PLAYER']).default('PLAYER'),
-    }).parse(req.body);
-
-    const member = await prisma.clubMember.create({
-      data: { clubId: req.params['id']!, userId, role },
-    });
-
-    res.status(201).json({ success: true, data: member });
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 // ─── GET /api/clubs — List user clubs ───────────────────────────────────────
 

@@ -30,15 +30,24 @@ const TAB_ICONS: Record<string, { active: any; inactive: any }> = {
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ route }: { route: { name: string } }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: C.card, borderTopColor: C.border, borderTopWidth: 1, height: 60, paddingBottom: 8, paddingTop: 4 },
+        tabBarStyle: {
+          backgroundColor: C.card,
+          borderTopColor: C.border,
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
+        },
         tabBarActiveTintColor: C.primary,
         tabBarInactiveTintColor: C.t3,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }: { focused: boolean; color: string }) => {
           const icons = TAB_ICONS[route.name] || TAB_ICONS.Home;
-          return <Ionicons name={focused ? icons.active : icons.inactive} size={22} color={color} />;
+          return (
+            <Ionicons name={focused ? icons.active : icons.inactive} size={22} color={color} />
+          );
         },
       })}
     >
@@ -55,9 +64,15 @@ export function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.bg }}>
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.bg }}
+      >
         <Ionicons name="football" size={44} color={C.primary} />
-        <Text style={{ color: C.w, fontSize: 20, fontWeight: '800', letterSpacing: 4, marginTop: 16 }}>MATCHDAY</Text>
+        <Text
+          style={{ color: C.w, fontSize: 20, fontWeight: '800', letterSpacing: 4, marginTop: 16 }}
+        >
+          MATCHDAY
+        </Text>
         <ActivityIndicator size="small" color={C.primary} style={{ marginTop: 20 }} />
       </View>
     );

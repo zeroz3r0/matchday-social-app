@@ -30,14 +30,8 @@
     },
     "plugins": [
       "expo-location",
-      [
-        "expo-image-picker",
-        { "photosPermission": "Permite acceso a tus fotos para tu avatar." }
-      ],
-      [
-        "expo-notifications",
-        { "icon": "./assets/notification-icon.png", "color": "#16db93" }
-      ]
+      ["expo-image-picker", { "photosPermission": "Permite acceso a tus fotos para tu avatar." }],
+      ["expo-notifications", { "icon": "./assets/notification-icon.png", "color": "#16db93" }]
     ],
     "scheme": "matchday"
   }

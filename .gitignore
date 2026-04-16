@@ -33,6 +33,18 @@ Thumbs.db
 *.orig.*
 web-build/
 
+# Expo prebuild — native Android build artifacts (regenerated via `expo prebuild`)
+apps/mobile/android/.gradle/
+apps/mobile/android/.kotlin/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/hs_err_pid*.log
+apps/mobile/android/replay_pid*.log
+
+# Debug screenshots from adb screencap
+device-screen.png
+*.device-screen.png
+
 # Testing
 coverage/
 

@@ -77,7 +77,12 @@ async function main() {
     },
   });
 
-  console.log('Seed complete:', { user1: user1.nickname, user2: user2.nickname, user3: user3.nickname, club: club.name });
+  console.log('Seed complete:', {
+    user1: user1.nickname,
+    user2: user2.nickname,
+    user3: user3.nickname,
+    club: club.name,
+  });
 }
 
 main()
