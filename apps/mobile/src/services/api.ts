@@ -1,10 +1,21 @@
 // ============================================================================
 // API Client — Fetch wrapper with auth
 // ============================================================================
+// Swappable: EXPO_PUBLIC_USE_MOCK=true replaces all calls with mockApi (offline).
+// ============================================================================
 
 import { getItem } from '../utils/storage';
+import * as mock from './mockApi';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+export const USE_MOCK =
+  process.env.EXPO_PUBLIC_USE_MOCK === 'true' || process.env.EXPO_PUBLIC_USE_MOCK === '1';
+
+if (USE_MOCK && typeof console !== 'undefined') {
+  // eslint-disable-next-line no-console
+  console.log('[matchday] Running in MOCK mode — no backend required');
+}
 
 async function getToken(): Promise<string | null> {
   return getItem('auth_token');
@@ -61,9 +72,9 @@ export class ApiError extends Error {
   }
 }
 
-// ─── Auth ───────────────────────────────────────────────────────────────────
+// ─── Real implementations (used when USE_MOCK = false) ──────────────────────
 
-export const authApi = {
+const realAuthApi = {
   register: (body: {
     email: string;
     password: string;
@@ -83,9 +94,7 @@ export const authApi = {
     }),
 };
 
-// ─── Users ──────────────────────────────────────────────────────────────────
-
-export const userApi = {
+const realUserApi = {
   getMe: () => request<{ success: true; data: any }>('/users/me'),
   getProfile: (id: string) => request<{ success: true; data: any }>(`/users/${id}`),
   updateProfile: (body: Record<string, any>) =>
@@ -95,9 +104,7 @@ export const userApi = {
     }),
 };
 
-// ─── Matches ────────────────────────────────────────────────────────────────
-
-export const matchApi = {
+const realMatchApi = {
   list: (params?: { status?: string; limit?: number; offset?: number }) => {
     const qs = params
       ? '?' +
@@ -137,9 +144,7 @@ export const matchApi = {
     }),
 };
 
-// ─── Votes ──────────────────────────────────────────────────────────────────
-
-export const voteApi = {
+const realVoteApi = {
   cast: (matchId: string, body: { targetPlayerId: string; rating: number; isMvpVote: boolean }) =>
     request<{ success: true; data: any }>(`/votes/${matchId}`, {
       method: 'POST',
@@ -150,9 +155,7 @@ export const voteApi = {
   getResults: (matchId: string) => request<{ success: true; data: any }>(`/votes/${matchId}`),
 };
 
-// ─── Clubs ──────────────────────────────────────────────────────────────────
-
-export const clubApi = {
+const realClubApi = {
   list: () => request<{ success: true; data: any[] }>('/clubs'),
   getById: (id: string) => request<{ success: true; data: any }>(`/clubs/${id}`),
   create: (body: { name: string; description?: string; preferredFormation?: string }) =>
@@ -164,9 +167,7 @@ export const clubApi = {
     }),
 };
 
-// ─── Competitions ───────────────────────────────────────────────────────────
-
-export const competitionApi = {
+const realCompetitionApi = {
   create: (body: any) =>
     request<{ success: true; data: any }>('/competitions', {
       method: 'POST',
@@ -187,11 +188,26 @@ export const competitionApi = {
     request<{ success: true; data: any[] }>(`/competitions/${competitionId}/brackets`),
 };
 
-// ─── Rankings ───────────────────────────────────────────────────────────────
-
-export const rankingApi = {
+const realRankingApi = {
   get: (params: Record<string, string>) => {
     const qs = new URLSearchParams(params).toString();
     return request<{ success: true; data: any[] }>(`/rankings?${qs}`);
   },
 };
+
+// ─── Swappable exports ──────────────────────────────────────────────────────
+// Tipados con `typeof real*` para preservar la inferencia en las screens.
+// El mock hace cast a `any` en el ternario porque su shape es estructuralmente
+// compatible pero los tipos internos (fechas ISO, Promise.resolve vs fetch) difieren.
+
+export const authApi: typeof realAuthApi = USE_MOCK ? (mock.authApi as any) : realAuthApi;
+export const userApi: typeof realUserApi = USE_MOCK ? (mock.userApi as any) : realUserApi;
+export const matchApi: typeof realMatchApi = USE_MOCK ? (mock.matchApi as any) : realMatchApi;
+export const voteApi: typeof realVoteApi = USE_MOCK ? (mock.voteApi as any) : realVoteApi;
+export const clubApi: typeof realClubApi = USE_MOCK ? (mock.clubApi as any) : realClubApi;
+export const competitionApi: typeof realCompetitionApi = USE_MOCK
+  ? (mock.competitionApi as any)
+  : realCompetitionApi;
+export const rankingApi: typeof realRankingApi = USE_MOCK
+  ? (mock.rankingApi as any)
+  : realRankingApi;
