@@ -24,7 +24,9 @@ export function startScheduledJobs(): void {
     const legalJobs = registerLegalCronJobs();
     legalJobs.hardDelete.start();
     legalJobs.exportSweep.start();
-    console.log('[CRON] Legal cron jobs registered (hard-delete daily 03:00 UTC + export sweep hourly)');
+    console.log(
+      '[CRON] Legal cron jobs registered (hard-delete daily 03:00 UTC + export sweep hourly)',
+    );
   }
 
   // ─── Auto-confirm pending stats ─────────────────────────────────────

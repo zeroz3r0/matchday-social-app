@@ -384,10 +384,7 @@ userRoutes.post(
 
       // Fire-and-forget: do NOT await. Exceptions inside the worker are
       // logged + captured to Sentry (see runExportWorker).
-      void runExportWorker(
-        { id: created.id, userId: created.userId },
-        prisma,
-      ).catch((err) => {
+      void runExportWorker({ id: created.id, userId: created.userId }, prisma).catch((err) => {
         Sentry.captureException(err);
       });
 

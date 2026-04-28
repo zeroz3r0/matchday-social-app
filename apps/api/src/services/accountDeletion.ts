@@ -68,10 +68,7 @@ export async function anonymizeUser(userId: string, tx: TxClient): Promise<void>
   await tx.clubMember.deleteMany({ where: { userId } });
 }
 
-export async function hardDeleteUser(
-  userId: string,
-  prisma: PrismaClient,
-): Promise<void> {
+export async function hardDeleteUser(userId: string, prisma: PrismaClient): Promise<void> {
   // Serializable isolation prevents the cron-vs-cancel race: if a user calls
   // /me/delete/cancel concurrently, one branch retries/fails and the cron
   // treats failed-due-to-cancel as a no-op (handled by caller).

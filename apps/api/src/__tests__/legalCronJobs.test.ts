@@ -63,10 +63,7 @@ describe('runHardDeleteTick', () => {
   });
 
   it('invokes hardDeleteUser for each candidate row', async () => {
-    (prisma.user.findMany as any).mockResolvedValue([
-      { id: 'user-old-1' },
-      { id: 'user-old-2' },
-    ]);
+    (prisma.user.findMany as any).mockResolvedValue([{ id: 'user-old-1' }, { id: 'user-old-2' }]);
 
     await runHardDeleteTick();
 
@@ -76,10 +73,7 @@ describe('runHardDeleteTick', () => {
   });
 
   it('continues processing when one user fails (per-user try/catch)', async () => {
-    (prisma.user.findMany as any).mockResolvedValue([
-      { id: 'user-bad' },
-      { id: 'user-good' },
-    ]);
+    (prisma.user.findMany as any).mockResolvedValue([{ id: 'user-bad' }, { id: 'user-good' }]);
     (hardDeleteUser as any)
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(undefined);

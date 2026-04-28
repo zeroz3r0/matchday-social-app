@@ -125,9 +125,7 @@ describe('POST /api/users/me/delete/cancel', () => {
     (prisma.user.findUnique as any).mockResolvedValue(mockUser);
     (prisma.user.update as any).mockResolvedValue({ ...mockUser, deletedAt: null });
 
-    const res = await request(app)
-      .post('/api/users/me/delete/cancel')
-      .set('Authorization', auth);
+    const res = await request(app).post('/api/users/me/delete/cancel').set('Authorization', auth);
 
     expect(res.status).toBe(204);
     expect(prisma.user.update).toHaveBeenCalledTimes(1);
@@ -151,9 +149,7 @@ describe('POST /api/users/me/delete/cancel', () => {
     };
     (prisma.user.findUnique as any).mockResolvedValue(mockUser);
 
-    const res = await request(app)
-      .post('/api/users/me/delete/cancel')
-      .set('Authorization', auth);
+    const res = await request(app).post('/api/users/me/delete/cancel').set('Authorization', auth);
 
     expect(res.status).toBe(410);
     expect(res.body.error.code).toBe('GRACE_PERIOD_EXPIRED');
@@ -170,9 +166,7 @@ describe('POST /api/users/me/delete/cancel', () => {
     };
     (prisma.user.findUnique as any).mockResolvedValue(mockUser);
 
-    const res = await request(app)
-      .post('/api/users/me/delete/cancel')
-      .set('Authorization', auth);
+    const res = await request(app).post('/api/users/me/delete/cancel').set('Authorization', auth);
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('NOT_DELETED');

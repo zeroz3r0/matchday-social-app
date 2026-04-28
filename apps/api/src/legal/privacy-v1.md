@@ -3,6 +3,7 @@ version: v1
 publishedAt: 2026-04-28
 locale: es
 ---
+
 # Política de Privacidad — matchday
 
 **Última actualización**: 2026-04-28
@@ -24,6 +25,7 @@ locale: es
 ## 3. Compartir
 
 No vendemos datos. Solo compartimos con:
+
 - Proveedores técnicos (hosting, email — Resend) bajo NDA
 - Cuando lo exija la ley
 

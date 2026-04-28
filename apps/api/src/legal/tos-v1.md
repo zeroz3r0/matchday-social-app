@@ -3,6 +3,7 @@ version: v1
 publishedAt: 2026-04-28
 locale: es
 ---
+
 # Términos de Servicio — matchday
 
 **Última actualización**: 2026-04-28
