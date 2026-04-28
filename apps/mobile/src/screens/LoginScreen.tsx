@@ -76,7 +76,13 @@ export function LoginScreen({ navigation }: any) {
                   onChangeText={setPassword}
                   secureTextEntry={!showPw}
                 />
-                <TouchableOpacity onPress={() => setShowPw(!showPw)} style={s.eyeBtn}>
+                <TouchableOpacity
+                  onPress={() => setShowPw(!showPw)}
+                  style={s.eyeBtn}
+                  accessibilityLabel={showPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
                   <Ionicons
                     name={showPw ? 'eye-off-outline' : 'eye-outline'}
                     size={20}

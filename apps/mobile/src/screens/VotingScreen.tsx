@@ -83,7 +83,12 @@ export function VotingScreen({ route, navigation }: any) {
 
   return (
     <ScrollView style={s.c} contentContainerStyle={s.cc}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        accessibilityLabel="Volver"
+        accessibilityRole="button"
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
         <Ionicons name="arrow-back" size={22} color={C.t2} />
       </TouchableOpacity>
 

@@ -129,7 +129,12 @@ export function ClubsScreen() {
           <View style={s.modal}>
             <View style={s.mHead}>
               <Text style={s.mTitle}>Crear Club</Text>
-              <TouchableOpacity onPress={() => setShowCreate(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCreate(false)}
+                accessibilityLabel="Cerrar"
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
                 <Ionicons name="close" size={22} color={C.t2} />
               </TouchableOpacity>
             </View>
