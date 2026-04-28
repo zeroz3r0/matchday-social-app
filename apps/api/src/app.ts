@@ -8,8 +8,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
 
 import { errorHandler } from './middleware/errorHandler';
+import { logger, REDACT_PATHS } from './utils/logger';
+import { checkHealth } from './services/health';
 import { authRoutes } from './routes/auth';
 import { userRoutes } from './routes/users';
 import { matchRoutes } from './routes/matches';
@@ -36,6 +39,16 @@ if (process.env['NODE_ENV'] !== 'test') {
   app.use(morgan('dev'));
 }
 
+// Structured request logging (Pino) — skipped in tests to keep vitest output clean
+if (process.env['NODE_ENV'] !== 'test') {
+  app.use(
+    pinoHttp({
+      logger,
+      redact: { paths: REDACT_PATHS, censor: '[Redacted]' },
+    }),
+  );
+}
+
 // ─── Rate Limiting ──────────────────────────────────────────────────────────
 
 if (process.env['NODE_ENV'] !== 'test') {
@@ -55,15 +68,13 @@ if (process.env['NODE_ENV'] !== 'test') {
 
 // ─── Health Check ───────────────────────────────────────────────────────────
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: '0.1.0',
-    },
-  });
+app.get('/api/health', async (_req, res, next) => {
+  try {
+    const data = await checkHealth();
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ─── API Routes ─────────────────────────────────────────────────────────────

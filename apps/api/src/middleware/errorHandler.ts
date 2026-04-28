@@ -1,10 +1,18 @@
 // ============================================================================
 // Global Error Handler
+//
+// Envelope contract (REQ-BS-4 — preserved):
+//   { success: false, error: { code, message, details?, data? } }
+//
+// `details` is reserved for ZodError-shaped validation issues
+// (`Record<string, string[]>`). `data` is a free-form payload propagated
+// from `AppError` for richer context (e.g. retryAfter, lock reason).
 // ============================================================================
 
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import { logger } from '../utils/logger';
 
 export class AppError extends Error {
   constructor(
@@ -12,6 +20,7 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public details?: Record<string, string[]>,
+    public data?: unknown,
   ) {
     super(message);
     this.name = 'AppError';
@@ -19,18 +28,28 @@ export class AppError extends Error {
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  console.error('[ERROR]', err);
+  logger.error({ err }, 'request_error');
 
   // ─── App Errors (known) ─────────────────────────────────────────────
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
+    const body: {
+      success: false;
+      error: {
+        code: string;
+        message: string;
+        details?: Record<string, string[]>;
+        data?: unknown;
+      };
+    } = {
       success: false,
       error: {
         code: err.code,
         message: err.message,
-        details: err.details,
       },
-    });
+    };
+    if (err.details !== undefined) body.error.details = err.details;
+    if (err.data !== undefined) body.error.data = err.data;
+    res.status(err.statusCode).json(body);
     return;
   }
 

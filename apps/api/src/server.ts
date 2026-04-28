@@ -3,18 +3,20 @@
 // ============================================================================
 
 import app from './app';
+import { logger } from './utils/logger';
 import { startScheduledJobs } from './jobs/scheduler';
 
 const PORT = process.env['PORT'] || 3000;
 
 app.listen(PORT, () => {
-  console.log(`
-  ⚽ MatchDay Social API
-  ──────────────────────
-  Environment: ${process.env['NODE_ENV'] || 'development'}
-  Port:        ${PORT}
-  Health:      http://localhost:${PORT}/api/health
-  `);
+  logger.info(
+    {
+      env: process.env['NODE_ENV'] || 'development',
+      port: PORT,
+      health: `http://localhost:${PORT}/api/health`,
+    },
+    'MatchDay Social API listening',
+  );
 
   startScheduledJobs();
 });
