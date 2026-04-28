@@ -18,6 +18,7 @@ Intentaba continuar la sesión de la app Matchday pero mi tool `Read` devolvía 
 **Evidencia**: Los primeros 8 bytes del PNG eran `FF FE EB 00 50 00 4E 00` en vez de la firma válida `89 50 4E 47 0D 0A 1A 0A`. `FF FE` es el **BOM UTF-16 LE** — PowerShell interpreta el stream binario como texto UTF-16 y añade BOM + hace conversiones CRLF.
 
 **Fix (siempre usar este patrón en PowerShell)**:
+
 ```powershell
 adb shell screencap -p /sdcard/s.png
 adb pull /sdcard/s.png device-screen.png
@@ -25,6 +26,7 @@ adb shell rm /sdcard/s.png
 ```
 
 Nunca usar `adb exec-out screencap -p > file.png` desde PowerShell. Alternativas válidas:
+
 - `cmd /c "adb exec-out screencap -p > file.png"` (usa cmd.exe)
 - El método `shell + pull` de arriba (más fiable)
 
@@ -33,6 +35,7 @@ Nunca usar `adb exec-out screencap -p > file.png` desde PowerShell. Alternativas
 ## Credenciales de test (apps/api/prisma/seed.ts)
 
 Todos con password `password123` (bcrypt hash en DB):
+
 - `carlos@test.com` → CarlosGol, FORWARD, Madrid (40.4168, -3.7038)
 - `marta@test.com` → MartaMuro, DEFENDER, Barcelona (41.3851, 2.1734)
 - `david@test.com` → DavidMago, MIDFIELDER, Madrid
@@ -64,6 +67,7 @@ Re-seed: `npm run api:db:seed` desde raíz.
 ## Commit realizado en esta sesión
 
 Ver git log. WIP snapshot antes de migrar de máquina. Incluye:
+
 - Prettier reformat masivo (31 archivos, +2286/-992)
 - Iteración en API routes (matches, votes, competitions)
 - Iteración en mobile screens (MatchDetail, Profile, Rankings, Voting, Home, Clubs)
@@ -74,6 +78,7 @@ Ver git log. WIP snapshot antes de migrar de máquina. Incluye:
 ## Para MAÑANA (continuar en casa)
 
 ### Setup inicial (máquina de casa)
+
 1. `git clone https://github.com/zeroz3r0/matchday-social-app.git` (o `git pull` si ya existe)
 2. `npm install` en raíz (monorepo, instala todo)
 3. Copiar `apps/api/.env` con DATABASE_URL de Neon + JWT_SECRET (NO está en git)
@@ -84,6 +89,7 @@ Ver git log. WIP snapshot antes de migrar de máquina. Incluye:
 8. Correr la app en device/emulator con la app Expo Go o build nativo
 
 ### Checklist para retomar
+
 - [ ] Ajustar `EXPO_PUBLIC_API_URL` con IP local de casa
 - [ ] Verificar que la IP de la LAN de casa sea alcanzable desde el móvil (mismo WiFi)
 - [ ] Si no hay device, usar emulador Android (Android Studio) o iOS (Xcode)
@@ -92,6 +98,7 @@ Ver git log. WIP snapshot antes de migrar de máquina. Incluye:
 - [ ] Continuar donde sea que quedó — posiblemente: HomeScreen, lista de partidos, crear match, etc.
 
 ### Tareas pendientes (de mayor a menor prioridad)
+
 1. **ALTO**: Confirmar que el login funciona end-to-end desde el device (falló el último tap)
 2. **ALTO**: Revisar si el WIP de prettier/reformat necesita algún ajuste (mirar diffs a fondo). Los diffs eran masivos pero la mayoría era solo formato.
 3. **MEDIO**: Si hay feature en curso (no quedó claro cuál), identificarla por el último commit + archivos que más cambiaron (MatchDetailScreen +345, routes/matches +524, routes/votes +331, routes/competitions +285).
