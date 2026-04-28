@@ -18,6 +18,9 @@ jobs:
 
       - run: npm ci
 
+      # Generate Prisma client (required by API tests)
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+
       # Build shared package first (other packages depend on it)
       - run: npm run shared:build
 
@@ -34,6 +37,7 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run shared:build
       - run: npm run lint
       - run: npm run typecheck
@@ -48,5 +52,6 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run shared:build
       - run: npm run api:build

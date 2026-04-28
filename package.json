@@ -23,7 +23,7 @@
     "test": "npm run test -w packages/shared && npm run test -w apps/api",
     "test:shared": "npm run test -w packages/shared",
     "test:api": "npm run test -w apps/api",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/mobile/tsconfig.json",
     "clean": "rimraf apps/*/dist apps/*/node_modules packages/*/dist packages/*/node_modules node_modules"
   },
   "devDependencies": {
