@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
 import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
+import { ApiError } from '../services/api';
 import { C, IMG } from '../utils/theme';
 
 export function LoginScreen({ navigation }: any) {
@@ -30,9 +31,33 @@ export function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await login(email, password);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // Honest error mapping (replaces the lying `err.message || "Credenciales
+      // incorrectas"` fallback that surfaced wrong copy on timeouts/server
+      // errors). Backend now sends a discriminated `error.code`; mobile reads
+      // it and chooses the right Spanish message.
       captureException(err);
-      showAlert('Error', err.message || 'Credenciales incorrectas');
+
+      let msg = 'Algo salió mal — intentá de nuevo';
+      if (err instanceof ApiError) {
+        switch (err.code) {
+          case 'INVALID_CREDENTIALS':
+            msg = 'Email o contraseña incorrectos';
+            break;
+          case 'ACCOUNT_LOCKED':
+            msg = 'Cuenta bloqueada — intentá más tarde';
+            break;
+          default:
+            msg = 'Algo salió mal — intentá de nuevo';
+        }
+      } else if (
+        err instanceof TypeError ||
+        (err as { message?: string })?.message?.includes('Network') ||
+        (err as { name?: string })?.name === 'AbortError'
+      ) {
+        msg = 'Error de conexión — verificá tu internet';
+      }
+      showAlert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -94,6 +119,16 @@ export function LoginScreen({ navigation }: any) {
                   />
                 </TouchableOpacity>
               </View>
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ForgotPassword')}
+                style={s.forgotBtn}
+                accessibilityRole="button"
+                accessibilityLabel="¿Olvidaste tu contraseña?"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={s.forgotText}>¿Olvidaste tu contraseña?</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[s.btn, (loading || !isConnected) && s.btnOff]}
@@ -191,6 +226,8 @@ const s = StyleSheet.create({
   },
   btnOff: { opacity: 0.5 },
   btnText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  forgotBtn: { alignSelf: 'flex-end', marginTop: 4, marginBottom: 12, paddingVertical: 4 },
+  forgotText: { color: C.primary, fontSize: 13, fontWeight: '600' },
   offlineHint: {
     color: C.red,
     fontSize: 12,
