@@ -82,6 +82,25 @@ export const authApi = {
     const user = byEmail ?? mockDb.currentUser;
     return { success: true as const, data: { user, token: `mock-token-${user.id}` } };
   },
+
+  // ─── Password recovery (mocks the anti-enumeration security pattern) ──────
+  // forgotPassword: ALWAYS returns vague success, regardless of email.
+  // resetPassword: accepts any token starting with "mock-" + newPassword ≥ 8.
+  forgotPassword: async (_email: string) => {
+    await delay();
+    return {
+      success: true as const,
+      data: { message: 'Si tu email está registrado, recibirás un email' },
+    };
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    await delay();
+    if (!token.startsWith('mock-') || newPassword.length < 8) {
+      throw new MockApiError(400, 'INVALID_TOKEN', 'Token inválido o expirado');
+    }
+    return { success: true as const };
+  },
 };
 
 // ─── Users ──────────────────────────────────────────────────────────────────

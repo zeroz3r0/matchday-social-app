@@ -137,6 +137,18 @@ const realAuthApi = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
+
+  forgotPassword: (email: string) =>
+    request<{ success: true; data: { message: string } }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ success: true }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    }),
 };
 
 const realUserApi = {
