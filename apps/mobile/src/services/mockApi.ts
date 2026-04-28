@@ -124,6 +124,94 @@ export const userApi = {
     Object.assign(user, body);
     return { success: true as const, data: user };
   },
+
+  // ─── Legal foundation: account-delete + cancel + export ─────────────────
+  deleteMe: async (): Promise<void> => {
+    await delay();
+    (mockDb.currentUser as MockUser & { deletedAt?: string | null }).deletedAt =
+      new Date().toISOString();
+  },
+
+  cancelDelete: async (): Promise<void> => {
+    await delay();
+    (mockDb.currentUser as MockUser & { deletedAt?: string | null }).deletedAt = null;
+  },
+
+  exportData: async () => {
+    await delay();
+    return {
+      success: true as const,
+      data: {
+        exportId: mockId('exp'),
+        message: 'Te enviaremos un email con el ZIP en breve.',
+      },
+    };
+  },
+};
+
+// ─── Legal docs (mock) ──────────────────────────────────────────────────────
+// Hardcoded Spanish placeholder mirroring backend tos-v1.md / privacy-v1.md.
+
+const MOCK_TOS_CONTENT = `# Términos de Servicio — matchday
+
+**Última actualización**: 2026-04-28
+
+> ⚠️ Texto provisorio mientras se completa la revisión legal.
+
+## 1. Aceptación
+
+Al usar matchday-social-app aceptás estos términos.
+
+## 2. Cuenta
+
+Sos responsable de la seguridad de tu cuenta y contraseña.
+
+## 3. Conducta
+
+Comportate con respeto. No se permite acoso, discurso de odio, ni contenido ilegal.
+
+## 4. Cancelación
+
+Podés cerrar tu cuenta en cualquier momento desde Configuración. Tendrás 30 días de gracia antes de la eliminación permanente.
+`;
+
+const MOCK_PRIVACY_CONTENT = `# Política de Privacidad — matchday
+
+**Última actualización**: 2026-04-28
+
+> ⚠️ Texto provisorio. Versión final pendiente.
+
+## 1. Datos que recolectamos
+
+- Email, nickname, contraseña (hash bcrypt)
+- Datos de partidos, votos, estadísticas
+- Datos de uso (logs, errores agregados)
+
+## 2. Uso
+
+- Operar la app
+- Comunicaciones esenciales (recovery, eliminación de cuenta, exports)
+
+## 3. Tus derechos
+
+Acceso, rectificación, eliminación (GDPR/LGPD).
+`;
+
+export const legalApi = {
+  getTos: async () => {
+    await delay();
+    return {
+      success: true as const,
+      data: { version: 'v1', content: MOCK_TOS_CONTENT },
+    };
+  },
+  getPrivacy: async () => {
+    await delay();
+    return {
+      success: true as const,
+      data: { version: 'v1', content: MOCK_PRIVACY_CONTENT },
+    };
+  },
 };
 
 // ─── Matches ────────────────────────────────────────────────────────────────
