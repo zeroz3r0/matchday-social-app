@@ -6,6 +6,7 @@ import { ActivityIndicator, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { navigationIntegration } from '../lib/sentry';
+import { NetworkStatusBanner } from '../components/NetworkStatusBanner';
 import { C } from '../utils/theme';
 
 import { LoginScreen } from '../screens/LoginScreen';
@@ -114,21 +115,24 @@ export function RootNavigator() {
         navigationIntegration.registerNavigationContainer(navRef);
       }}
     >
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
-            <Stack.Screen name="CreateMatch" component={CreateMatchScreen} />
-            <Stack.Screen name="Voting" component={VotingScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
+      <View style={{ flex: 1 }}>
+        <NetworkStatusBanner />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {isAuthenticated ? (
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
+              <Stack.Screen name="CreateMatch" component={CreateMatchScreen} />
+              <Stack.Screen name="Voting" component={VotingScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </View>
     </NavigationContainer>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
@@ -14,6 +15,7 @@ const POSITIONS = [
 
 export function RegisterScreen({ navigation }: any) {
   const { register } = useAuth();
+  const { isConnected } = useNetworkStatus();
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -118,12 +120,14 @@ export function RegisterScreen({ navigation }: any) {
       </View>
 
       <TouchableOpacity
-        style={[s.btn, loading && { opacity: 0.5 }]}
+        style={[s.btn, (loading || !isConnected) && { opacity: 0.5 }]}
         onPress={handleRegister}
-        disabled={loading}
+        disabled={loading || !isConnected}
       >
         <Text style={s.btnT}>{loading ? 'Creando...' : 'Registrarse'}</Text>
       </TouchableOpacity>
+
+      {!isConnected && <Text style={s.offlineHint}>Sin conexión</Text>}
 
       <TouchableOpacity onPress={() => navigation.goBack()} style={s.loginLink}>
         <Text style={s.loginT}>
@@ -177,6 +181,13 @@ const s = StyleSheet.create({
     marginTop: 12,
   },
   btnT: { color: C.bg, fontSize: 15, fontWeight: '700' },
+  offlineHint: {
+    color: C.red,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
   loginLink: { marginTop: 20, alignItems: 'center' },
   loginT: { color: C.t2, fontSize: 13 },
 });

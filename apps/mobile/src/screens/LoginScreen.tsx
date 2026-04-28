@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 import { showAlert } from '../utils/alert';
 import { C, IMG } from '../utils/theme';
 
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
+  const { isConnected } = useNetworkStatus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,9 +94,9 @@ export function LoginScreen({ navigation }: any) {
               </View>
 
               <TouchableOpacity
-                style={[s.btn, loading && s.btnOff]}
+                style={[s.btn, (loading || !isConnected) && s.btnOff]}
                 onPress={handleLogin}
-                disabled={loading}
+                disabled={loading || !isConnected}
                 activeOpacity={0.8}
               >
                 {loading ? (
@@ -103,6 +105,8 @@ export function LoginScreen({ navigation }: any) {
                   <Text style={s.btnText}>Entrar</Text>
                 )}
               </TouchableOpacity>
+
+              {!isConnected && <Text style={s.offlineHint}>Sin conexión</Text>}
             </View>
 
             {/* Register */}
@@ -185,6 +189,13 @@ const s = StyleSheet.create({
   },
   btnOff: { opacity: 0.5 },
   btnText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  offlineHint: {
+    color: C.red,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 
   regBtn: { marginTop: 24, alignItems: 'center' },
   regText: { color: C.t2, fontSize: 14 },
