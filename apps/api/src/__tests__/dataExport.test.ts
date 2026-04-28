@@ -119,8 +119,10 @@ describe('POST /api/users/me/export', () => {
     expect(createArg.data.userId).toBe(userId);
     expect(createArg.data.status).toBe('PENDING');
 
-    // Wait a tick for the fire-and-forget worker to invoke email.
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    // Wait for the fire-and-forget worker to write the ZIP + invoke email.
+    // The worker is async (Promise.all + archiver finalize + fs writes) so
+    // give it enough headroom to complete on slow CI runners.
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     expect(sendEmail).toHaveBeenCalledTimes(1);
     const emailArg = (sendEmail as any).mock.calls[0][0];
