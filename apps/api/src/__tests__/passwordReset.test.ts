@@ -172,9 +172,7 @@ describe('POST /api/auth/reset-password', () => {
       createdAt: new Date(),
     };
 
-    (prisma.passwordResetToken.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
-      tokenRow,
-    ]);
+    (prisma.passwordResetToken.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([tokenRow]);
     (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (prisma.passwordResetToken.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
       count: 1,
@@ -268,9 +266,7 @@ describe('POST /api/auth/reset-password', () => {
       createdAt: new Date(),
     };
 
-    (prisma.passwordResetToken.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
-      tokenRow,
-    ]);
+    (prisma.passwordResetToken.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([tokenRow]);
     (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (bcrypt.hash as ReturnType<typeof vi.fn>).mockResolvedValue('$2b$12$newHash');
     (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);

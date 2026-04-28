@@ -118,10 +118,7 @@ export function ResetPasswordScreen({
         });
         return;
       }
-      if (
-        err instanceof TypeError ||
-        (err as { message?: string })?.message?.includes('Network')
-      ) {
+      if (err instanceof TypeError || (err as { message?: string })?.message?.includes('Network')) {
         setErrors({
           ...EMPTY_ERRORS,
           form: 'Error de conexión — verificá tu internet',
@@ -161,7 +158,12 @@ export function ResetPasswordScreen({
 
         {/* Token */}
         <View style={[s.field, { alignItems: 'flex-start' }]}>
-          <Ionicons name="key-outline" size={18} color={C.t3} style={[s.fIcon, { paddingTop: 14 }]} />
+          <Ionicons
+            name="key-outline"
+            size={18}
+            color={C.t3}
+            style={[s.fIcon, { paddingTop: 14 }]}
+          />
           <TextInput
             style={[s.input, { minHeight: 64 }]}
             placeholder="Pegá el token del email"
@@ -221,9 +223,7 @@ export function ResetPasswordScreen({
             editable={!pending}
           />
         </View>
-        {errors.confirmPassword ? (
-          <Text style={s.fieldError}>{errors.confirmPassword}</Text>
-        ) : null}
+        {errors.confirmPassword ? <Text style={s.fieldError}>{errors.confirmPassword}</Text> : null}
 
         {/* Form-level error */}
         {errors.form ? (
@@ -244,10 +244,7 @@ export function ResetPasswordScreen({
 
         {!isConnected && <Text style={s.offlineHint}>Sin conexión</Text>}
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ForgotPassword')}
-          style={s.loginLink}
-        >
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={s.loginLink}>
           <Text style={s.loginT}>
             <Text style={{ color: C.primary, fontWeight: '600' }}>Pedir un nuevo enlace</Text>
           </Text>

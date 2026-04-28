@@ -163,8 +163,7 @@ const forgotPasswordLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request): string => {
-    const email =
-      typeof req.body?.email === 'string' ? req.body.email.toLowerCase() : 'unknown';
+    const email = typeof req.body?.email === 'string' ? req.body.email.toLowerCase() : 'unknown';
     return `forgot:${email}`;
   },
   message: {
@@ -238,34 +237,31 @@ authRoutes.post(
 
 // ─── POST /api/auth/reset-password ──────────────────────────────────────────
 
-authRoutes.post(
-  '/reset-password',
-  async (req: Request, res: Response, next: NextFunction) => {
-    let parsed: z.infer<typeof resetPasswordSchema>;
-    try {
-      parsed = resetPasswordSchema.parse(req.body);
-    } catch (err) {
-      next(err);
+authRoutes.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+  let parsed: z.infer<typeof resetPasswordSchema>;
+  try {
+    parsed = resetPasswordSchema.parse(req.body);
+  } catch (err) {
+    next(err);
+    return;
+  }
+
+  try {
+    await consumeToken(parsed.token, parsed.newPassword);
+    res.json({ success: true, data: { message: 'Contraseña actualizada' } });
+  } catch (err) {
+    if (err instanceof TokenInvalidError) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Token inválido o expirado',
+        },
+      });
       return;
     }
-
-    try {
-      await consumeToken(parsed.token, parsed.newPassword);
-      res.json({ success: true, data: { message: 'Contraseña actualizada' } });
-    } catch (err) {
-      if (err instanceof TokenInvalidError) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: 'INVALID_TOKEN',
-            message: 'Token inválido o expirado',
-          },
-        });
-        return;
-      }
-      logger.error({ err }, 'reset_password_internal_error');
-      Sentry.captureException(err);
-      next(err);
-    }
-  },
-);
+    logger.error({ err }, 'reset_password_internal_error');
+    Sentry.captureException(err);
+    next(err);
+  }
+});

@@ -51,10 +51,7 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
 
   const apiKey = process.env['RESEND_API_KEY'];
   if (!apiKey) {
-    logger.warn(
-      { to, subject },
-      'email_send_skipped_missing_api_key',
-    );
+    logger.warn({ to, subject }, 'email_send_skipped_missing_api_key');
     return { id: 'noop' };
   }
 

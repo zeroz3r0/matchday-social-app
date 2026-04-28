@@ -80,12 +80,7 @@ export function ForgotPasswordScreen({ navigation }: { navigation: { goBack: () 
   };
 
   if (state.status === 'fatal') {
-    return (
-      <ErrorView
-        message={state.message}
-        retry={() => setState({ status: 'idle' })}
-      />
-    );
+    return <ErrorView message={state.message} retry={() => setState({ status: 'idle' })} />;
   }
 
   const pending = state.status === 'pending';
