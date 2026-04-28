@@ -55,3 +55,6 @@ apps/api/prisma/migrations/**/migration_lock.toml
 # Logs
 *.log
 npm-debug.log*
+
+# Skill registry (generated locally per machine)
+.atl/
