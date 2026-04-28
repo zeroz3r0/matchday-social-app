@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi, clubApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
 export function CreateMatchScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { isConnected } = useNetworkStatus();
   const [gameType, setGameType] = useState('F7');
   const [locationName, setLocationName] = useState('');
   const [locationAddress, setLocationAddress] = useState('');
@@ -23,7 +26,7 @@ export function CreateMatchScreen({ navigation }: any) {
     clubApi
       .list()
       .then((r) => setClubs(r.data))
-      .catch(() => {});
+      .catch((err) => captureException(err));
   }, []);
 
   const handleCreate = async () => {
@@ -46,6 +49,7 @@ export function CreateMatchScreen({ navigation }: any) {
       });
       showAlert('Partido creado', 'Tu partido ha sido creado', () => navigation.goBack());
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     } finally {
       setSubmitting(false);
@@ -149,13 +153,15 @@ export function CreateMatchScreen({ navigation }: any) {
       )}
 
       <TouchableOpacity
-        style={[s.btn, submitting && { opacity: 0.5 }]}
+        style={[s.btn, (submitting || !isConnected) && { opacity: 0.5 }]}
         onPress={handleCreate}
-        disabled={submitting}
+        disabled={submitting || !isConnected}
       >
         <Ionicons name="add-circle" size={20} color={C.bg} />
         <Text style={s.btnT}>{submitting ? 'Creando...' : 'Crear partido'}</Text>
       </TouchableOpacity>
+
+      {!isConnected && <Text style={s.offlineHint}>Sin conexión</Text>}
     </ScrollView>
   );
 }
@@ -231,4 +237,11 @@ const s = StyleSheet.create({
     marginTop: 28,
   },
   btnT: { color: C.bg, fontSize: 15, fontWeight: '700' },
+  offlineHint: {
+    color: C.red,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 });

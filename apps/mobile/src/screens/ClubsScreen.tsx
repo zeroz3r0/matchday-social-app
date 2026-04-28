@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { clubApi } from '../services/api';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
@@ -28,8 +29,8 @@ export function ClubsScreen() {
     try {
       const r = await clubApi.list();
       setClubs(r.data);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     } finally {
       setLoading(false);
     }
@@ -48,6 +49,7 @@ export function ClubsScreen() {
       setNewDesc('');
       load();
     } catch (e: any) {
+      captureException(e);
       showAlert('Error', e.message);
     } finally {
       setCreating(false);

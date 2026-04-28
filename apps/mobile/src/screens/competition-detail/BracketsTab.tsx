@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { competitionApi } from '../../services/api';
 import { BracketView } from '../../components/BracketView';
 import type { BracketStage, BracketMatch } from '../../components/BracketView';
+import { ErrorView } from '../../components/ErrorView';
+import { captureException } from '../../lib/sentry';
 import { C } from '../../utils/theme';
 
 interface BracketsTabProps {
@@ -49,6 +51,7 @@ export function BracketsTab({ competitionId }: BracketsTabProps) {
   const [stages, setStages] = useState<BracketStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let aborted = false;
@@ -64,6 +67,7 @@ export function BracketsTab({ competitionId }: BracketsTabProps) {
         setStages(mapped);
       } catch (err) {
         if (aborted) return;
+        captureException(err);
         const message = err instanceof Error ? err.message : 'No se pudieron cargar las llaves';
         setError(message);
       } finally {
@@ -73,7 +77,7 @@ export function BracketsTab({ competitionId }: BracketsTabProps) {
     return () => {
       aborted = true;
     };
-  }, [competitionId]);
+  }, [competitionId, reloadKey]);
 
   if (loading) {
     return (
@@ -84,12 +88,7 @@ export function BracketsTab({ competitionId }: BracketsTabProps) {
   }
 
   if (error !== null) {
-    return (
-      <View style={[s.c, s.center, { paddingHorizontal: 24 }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={C.red} />
-        <Text style={s.errorT}>{error}</Text>
-      </View>
-    );
+    return <ErrorView message={error} retry={() => setReloadKey((k) => k + 1)} />;
   }
 
   if (stages.length === 0) {

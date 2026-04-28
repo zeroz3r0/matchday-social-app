@@ -19,6 +19,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi } from '../../services/api';
+import { ErrorView } from '../../components/ErrorView';
+import { captureException } from '../../lib/sentry';
 import { C, GAME_COLORS, STATUS } from '../../utils/theme';
 
 interface CalendarNav {
@@ -98,6 +100,7 @@ export function CalendarTab({ competitionId, navigation }: CalendarTabProps) {
   const [sections, setSections] = useState<MatchSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let aborted = false;
@@ -116,6 +119,7 @@ export function CalendarTab({ competitionId, navigation }: CalendarTabProps) {
         setSections(groupByDate(filtered as MatchItem[]));
       } catch (err) {
         if (aborted) return;
+        captureException(err);
         const message = err instanceof Error ? err.message : 'No se pudieron cargar los partidos';
         setError(message);
       } finally {
@@ -125,7 +129,7 @@ export function CalendarTab({ competitionId, navigation }: CalendarTabProps) {
     return () => {
       aborted = true;
     };
-  }, [competitionId]);
+  }, [competitionId, reloadKey]);
 
   if (loading) {
     return (
@@ -136,12 +140,7 @@ export function CalendarTab({ competitionId, navigation }: CalendarTabProps) {
   }
 
   if (error !== null) {
-    return (
-      <View style={[s.c, s.center, { paddingHorizontal: 24 }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={C.red} />
-        <Text style={s.errorT}>{error}</Text>
-      </View>
-    );
+    return <ErrorView message={error} retry={() => setReloadKey((k) => k + 1)} />;
   }
 
   if (sections.length === 0) {

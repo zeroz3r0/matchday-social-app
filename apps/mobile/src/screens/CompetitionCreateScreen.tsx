@@ -22,6 +22,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { competitionApi } from '../services/api';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import type { CompetitionStackParamList } from '../navigation/RootNavigator';
 import { C } from '../utils/theme';
@@ -56,6 +58,7 @@ function fmtDate(d: Date): string {
 type Props = NativeStackScreenProps<CompetitionStackParamList, 'CompetitionCreate'>;
 
 export function CompetitionCreateScreen({ navigation }: Props) {
+  const { isConnected } = useNetworkStatus();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<CompetitionType>('LEAGUE');
@@ -132,6 +135,7 @@ export function CompetitionCreateScreen({ navigation }: Props) {
       await competitionApi.create(input);
       showAlert('¡Listo!', 'Competición creada', () => navigation.goBack());
     } catch (err) {
+      captureException(err);
       const message = err instanceof Error ? err.message : 'No se pudo crear la competición';
       setErrors({ general: message });
     } finally {
@@ -301,13 +305,15 @@ export function CompetitionCreateScreen({ navigation }: Props) {
       )}
 
       <TouchableOpacity
-        style={[s.btn, submitting && { opacity: 0.5 }]}
+        style={[s.btn, (submitting || !isConnected) && { opacity: 0.5 }]}
         onPress={handleSubmit}
-        disabled={submitting}
+        disabled={submitting || !isConnected}
       >
         <Ionicons name="add-circle" size={20} color={C.bg} />
         <Text style={s.btnT}>{submitting ? 'Creando...' : 'Crear competición'}</Text>
       </TouchableOpacity>
+
+      {!isConnected && <Text style={s.offlineHint}>Sin conexión</Text>}
     </ScrollView>
   );
 }
@@ -382,4 +388,11 @@ const s = StyleSheet.create({
     marginTop: 28,
   },
   btnT: { color: C.bg, fontSize: 15, fontWeight: '700' },
+  offlineHint: {
+    color: C.red,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 });

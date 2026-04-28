@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi } from '../services/api';
+import { captureException } from '../lib/sentry';
 import { C, IMG, GAME_COLORS, STATUS } from '../utils/theme';
 
 export function HomeScreen({ navigation }: any) {
@@ -22,8 +23,8 @@ export function HomeScreen({ navigation }: any) {
     try {
       const r = await matchApi.list();
       setMatches(r.data);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     } finally {
       setLoading(false);
       setRefreshing(false);

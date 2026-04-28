@@ -1,10 +1,12 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { navigationIntegration } from '../lib/sentry';
+import { NetworkStatusBanner } from '../components/NetworkStatusBanner';
 import { C } from '../utils/theme';
 
 import { LoginScreen } from '../screens/LoginScreen';
@@ -88,6 +90,7 @@ function MainTabs() {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
+  const navRef = useRef<NavigationContainerRef<Record<string, object | undefined>>>(null);
 
   if (isLoading) {
     return (
@@ -106,22 +109,30 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
-            <Stack.Screen name="CreateMatch" component={CreateMatchScreen} />
-            <Stack.Screen name="Voting" component={VotingScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
+    <NavigationContainer
+      ref={navRef}
+      onReady={() => {
+        navigationIntegration.registerNavigationContainer(navRef);
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <NetworkStatusBanner />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {isAuthenticated ? (
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
+              <Stack.Screen name="CreateMatch" component={CreateMatchScreen} />
+              <Stack.Screen name="Voting" component={VotingScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </View>
     </NavigationContainer>
   );
 }

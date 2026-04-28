@@ -7,6 +7,7 @@
 import { getItem } from '../utils/storage';
 import * as mock from './mockApi';
 import type { ListCompetitionsQuery } from '@matchday/shared';
+import { captureException } from '../lib/sentry';
 
 // ─── Wire types — Competition (dates as ISO strings on the wire) ────────────
 
@@ -89,7 +90,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   let data: any;
   try {
     data = await response.json();
-  } catch {
+  } catch (err) {
+    captureException(err);
     data = { error: { message: response.statusText } };
   }
 

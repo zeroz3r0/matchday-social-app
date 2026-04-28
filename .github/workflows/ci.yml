@@ -42,6 +42,15 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+      - name: Forbid silent catch blocks
+        run: |
+          # REQ-CS-2: empty catch blocks (incl. /* ignore */) are forbidden.
+          # Match: catch(){...empty}, catch{...empty}, with optional only-comment body.
+          if grep -rEn 'catch\s*(\([^)]*\))?\s*\{\s*(/\*[^*]*\*/\s*)?\}' apps/mobile/src apps/api/src --include='*.ts' --include='*.tsx'; then
+            echo "ERROR: Silent catch block found — add Sentry.captureException(err) or proper handling."
+            exit 1
+          fi
+
   api-build:
     runs-on: ubuntu-latest
     steps:

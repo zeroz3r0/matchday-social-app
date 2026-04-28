@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { competitionApi } from '../../services/api';
 import { StandingsTable } from '../../components/StandingsTable';
 import type { StandingRow } from '../../components/StandingsTable';
+import { ErrorView } from '../../components/ErrorView';
+import { captureException } from '../../lib/sentry';
 import { C } from '../../utils/theme';
 
 interface StandingsTabProps {
@@ -43,6 +45,7 @@ export function StandingsTab({ competitionId }: StandingsTabProps) {
   const [rows, setRows] = useState<StandingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let aborted = false;
@@ -58,6 +61,7 @@ export function StandingsTab({ competitionId }: StandingsTabProps) {
         setRows(mapped);
       } catch (err) {
         if (aborted) return;
+        captureException(err);
         const message = err instanceof Error ? err.message : 'No se pudo cargar la tabla';
         setError(message);
       } finally {
@@ -67,7 +71,7 @@ export function StandingsTab({ competitionId }: StandingsTabProps) {
     return () => {
       aborted = true;
     };
-  }, [competitionId]);
+  }, [competitionId, reloadKey]);
 
   if (loading) {
     return (
@@ -78,12 +82,7 @@ export function StandingsTab({ competitionId }: StandingsTabProps) {
   }
 
   if (error !== null) {
-    return (
-      <View style={[s.c, s.center, { paddingHorizontal: 24 }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={C.red} />
-        <Text style={s.errorT}>{error}</Text>
-      </View>
-    );
+    return <ErrorView message={error} retry={() => setReloadKey((k) => k + 1)} />;
   }
 
   if (rows.length === 0) {

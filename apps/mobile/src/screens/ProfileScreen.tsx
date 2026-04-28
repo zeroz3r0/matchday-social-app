@@ -12,6 +12,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../services/api';
+import { captureException } from '../lib/sentry';
 import { C, IMG } from '../utils/theme';
 
 const POS_MAP: Record<string, { icon: string; label: string }> = {
@@ -31,8 +32,8 @@ export function ProfileScreen() {
     try {
       const r = await userApi.getMe();
       setProfile(r.data);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     } finally {
       setLoading(false);
       setRefreshing(false);
