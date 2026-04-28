@@ -1,10 +1,11 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { navigationIntegration } from '../lib/sentry';
 import { C } from '../utils/theme';
 
 import { LoginScreen } from '../screens/LoginScreen';
@@ -88,6 +89,7 @@ function MainTabs() {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
+  const navRef = useRef<NavigationContainerRef<Record<string, object | undefined>>>(null);
 
   if (isLoading) {
     return (
@@ -106,7 +108,12 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navRef}
+      onReady={() => {
+        navigationIntegration.registerNavigationContainer(navRef);
+      }}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
