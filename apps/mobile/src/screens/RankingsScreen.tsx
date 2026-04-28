@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { rankingApi } from '../services/api';
+import { captureException } from '../lib/sentry';
 import { C } from '../utils/theme';
 
 const CATS = [
@@ -42,8 +43,8 @@ export function RankingsScreen() {
       }
       const r = await rankingApi.get(p);
       setData(r.data);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     } finally {
       setLoading(false);
     }
