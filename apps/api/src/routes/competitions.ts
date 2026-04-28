@@ -4,12 +4,101 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { createCompetitionSchema, registerClubSchema } from '@matchday/shared';
+import {
+  createCompetitionSchema,
+  registerClubSchema,
+  listCompetitionsQuerySchema,
+} from '@matchday/shared';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { encodeCursor, decodeCursor } from '../utils/cursor';
 
 export const competitionRoutes = Router();
+
+// ─── GET /api/competitions ──────────────────────────────────────────────────
+// Public list with filters + cursor pagination. NO auth.
+
+competitionRoutes.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = listCompetitionsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const e of parsed.error.errors) {
+        const path = e.path.join('.');
+        if (!details[path]) details[path] = [];
+        details[path]!.push(e.message);
+      }
+      throw new AppError(400, 'VALIDATION_ERROR', 'Datos de entrada invalidos', details);
+    }
+    const q = parsed.data;
+
+    // Build where clause — undefined keys skipped.
+    const where: { city?: string; type?: 'LEAGUE' | 'TOURNAMENT'; gameType?: 'F5' | 'F7' | 'F11' } =
+      {};
+    if (q.city !== undefined) where.city = q.city;
+    if (q.type !== undefined) where.type = q.type;
+    if (q.gameType !== undefined) where.gameType = q.gameType;
+
+    // Decode cursor if present — null result means malformed.
+    let cursorClause: { cursor: { id: string }; skip: number } | undefined;
+    if (q.cursor !== undefined) {
+      const decoded = decodeCursor(q.cursor);
+      if (decoded === null) {
+        throw new AppError(400, 'INVALID_CURSOR', 'Cursor invalido');
+      }
+      cursorClause = { cursor: { id: decoded.id }, skip: 1 };
+    }
+
+    const items = await prisma.competition.findMany({
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: q.limit + 1,
+      ...cursorClause,
+    });
+
+    const hasMore = items.length > q.limit;
+    const page = hasMore ? items.slice(0, q.limit) : items;
+    const last = page[page.length - 1];
+    const nextCursor = hasMore && last ? encodeCursor(last.createdAt, last.id) : null;
+
+    res.json({
+      success: true,
+      data: page,
+      pagination: { nextCursor, hasMore },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── GET /api/competitions/:id ──────────────────────────────────────────────
+// Public detail with creator + clubs. NO auth.
+
+competitionRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params['id']!;
+    const competition = await prisma.competition.findUnique({
+      where: { id },
+      include: {
+        createdBy: { select: { id: true, nickname: true } },
+        clubs: {
+          include: {
+            club: { select: { id: true, name: true, badgeUrl: true } },
+          },
+        },
+      },
+    });
+
+    if (!competition) {
+      throw new AppError(404, 'NOT_FOUND', 'Competicion no encontrada');
+    }
+
+    res.json({ success: true, data: competition });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // ─── POST /api/competitions ─────────────────────────────────────────────────
 
