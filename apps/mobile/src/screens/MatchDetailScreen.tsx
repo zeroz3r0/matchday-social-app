@@ -95,7 +95,12 @@ export function MatchDetailScreen({ route, navigation }: any) {
     <ScrollView style={s.c} contentContainerStyle={s.cc}>
       {/* Header */}
       <View style={s.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessibilityLabel="Volver"
+          accessibilityRole="button"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Ionicons name="arrow-back" size={22} color={C.t2} />
         </TouchableOpacity>
         <View style={[s.tag, { backgroundColor: st.bg }]}>
