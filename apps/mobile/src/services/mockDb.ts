@@ -10,6 +10,42 @@ export type GameType = 'F5' | 'F7' | 'F11';
 export type MatchStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'POSTPONED';
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
 
+// Competition type/gameType — const-pattern (no raw string-literal unions)
+export const CompetitionType = {
+  LEAGUE: 'LEAGUE',
+  TOURNAMENT: 'TOURNAMENT',
+} as const;
+export type CompetitionType = (typeof CompetitionType)[keyof typeof CompetitionType];
+
+export const CompetitionGameType = {
+  F5: 'F5',
+  F7: 'F7',
+  F11: 'F11',
+} as const;
+export type CompetitionGameType = (typeof CompetitionGameType)[keyof typeof CompetitionGameType];
+
+export interface MockCompetition {
+  id: string;
+  name: string;
+  type: CompetitionType;
+  gameType: CompetitionGameType;
+  description: string | null;
+  startDate: string; // ISO
+  endDate: string | null; // ISO
+  city: string;
+  latitude: number;
+  longitude: number;
+  creatorId: string;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+  clubIds: string[];
+}
+
+export interface MockCompetitionClubLink {
+  competitionId: string;
+  clubId: string;
+}
+
 export interface MockUser {
   id: string;
   email: string;
@@ -330,6 +366,117 @@ const clubs: MockClub[] = [
   },
 ];
 
+// ─── Seed: Competitions ─────────────────────────────────────────────────────
+// 4 entries spanning LEAGUE+TOURNAMENT × F5/F7/F11. comp1 + comp2 share
+// createdAt to exercise the (createdAt DESC, id DESC) tie-break in pagination.
+
+const competitions: MockCompetition[] = [
+  {
+    id: 'comp1',
+    name: 'Liga Veterana F7 Madrid',
+    type: 'LEAGUE',
+    gameType: 'F7',
+    description: 'Liga abierta sabados.',
+    startDate: iso(-25 * DAY),
+    endDate: iso(60 * DAY),
+    city: 'Madrid',
+    latitude: 40.4168,
+    longitude: -3.7038,
+    creatorId: 'u1',
+    createdAt: iso(-30 * DAY),
+    updatedAt: iso(-30 * DAY),
+    clubIds: ['c1', 'c3'],
+  },
+  {
+    id: 'comp2',
+    name: 'Copa Verano Albirroja',
+    type: 'TOURNAMENT',
+    gameType: 'F11',
+    description: 'Single-elim, 8 equipos.',
+    startDate: iso(-10 * DAY),
+    endDate: iso(20 * DAY),
+    city: 'Madrid',
+    latitude: 40.4168,
+    longitude: -3.7038,
+    creatorId: 'u3',
+    // Same createdAt as comp1 to exercise tie-break (REQ-MD-4)
+    createdAt: iso(-30 * DAY),
+    updatedAt: iso(-20 * DAY),
+    clubIds: ['c1', 'c2'],
+  },
+  {
+    id: 'comp3',
+    name: 'Torneo Relampago F5 Centro',
+    type: 'TOURNAMENT',
+    gameType: 'F5',
+    description: 'Un dia, 4 equipos.',
+    startDate: iso(-3 * DAY),
+    endDate: iso(7 * DAY),
+    city: 'Madrid',
+    latitude: 40.4168,
+    longitude: -3.7038,
+    creatorId: 'u4',
+    createdAt: iso(-10 * DAY),
+    updatedAt: iso(-10 * DAY),
+    clubIds: ['c2'],
+  },
+  {
+    id: 'comp4',
+    name: 'Liga Panadera F11',
+    type: 'LEAGUE',
+    gameType: 'F11',
+    description: 'Domingos por la manana.',
+    startDate: iso(0),
+    endDate: iso(90 * DAY),
+    city: 'Madrid',
+    latitude: 40.4168,
+    longitude: -3.7038,
+    creatorId: 'u3',
+    createdAt: iso(-5 * DAY),
+    updatedAt: iso(-5 * DAY),
+    clubIds: ['c2', 'c3'],
+  },
+];
+
+// ─── Cursor helpers (mock) ──────────────────────────────────────────────────
+// Mock cursor format: base64(`${ISO}__${id}`).
+// Backend canonical impl in apps/api/src/utils/cursor.ts uses base64URL via
+// Node Buffer. Mobile mock uses standard base64 via globalThis.btoa (Hermes
+// supports it on RN 0.71+). Cursor is opaque per backend hand-off — different
+// runtimes never share cursor strings, so alphabet divergence is safe.
+
+export function encodeMockCursor(createdAt: string, id: string): string {
+  // unicode-safe wrap (ids/iso are ASCII but defensive)
+  return globalThis.btoa(unescape(encodeURIComponent(`${createdAt}__${id}`)));
+}
+
+export interface DecodedMockCursor {
+  createdAt: string;
+  id: string;
+}
+
+export function decodeMockCursor(raw: string): DecodedMockCursor | null {
+  if (!raw) return null;
+  try {
+    const decoded = decodeURIComponent(escape(globalThis.atob(raw)));
+    const sep = decoded.indexOf('__');
+    if (sep <= 0 || sep === decoded.length - 2) return null;
+
+    const createdAt = decoded.slice(0, sep);
+    const id = decoded.slice(sep + 2);
+    if (!createdAt || !id) return null;
+
+    const d = new Date(createdAt);
+    if (Number.isNaN(d.getTime())) return null;
+    // Reject inputs that decoded to garbage by re-encode comparison
+    if (d.toISOString() !== createdAt) return null;
+
+    return { createdAt, id };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Seed helpers: build matches with teams/players ─────────────────────────
 
 function mkPlayer(userId: string, invitationStatus: InvitationStatus = 'ACCEPTED'): MockPlayer {
@@ -440,7 +587,7 @@ const matches: MockMatch[] = [];
     homeScore: 4,
     awayScore: 3,
     createdById: 'u1',
-    competitionId: null,
+    competitionId: 'comp1',
     teams: [
       mkTeam(id, true, 'Los Albirrojos', 'c1', ['u1', 'u2', 'u5', 'u6', 'u7']),
       mkTeam(id, false, 'Rivales del Este', null, ['u3', 'u4', 'u8']),
@@ -468,7 +615,7 @@ const matches: MockMatch[] = [];
     homeScore: 2,
     awayScore: 1,
     createdById: 'u3',
-    competitionId: null,
+    competitionId: 'comp2',
     teams: [
       mkTeam(id, true, 'Panaderos FC', 'c2', ['u3', 'u4', 'u8', 'u1']),
       mkTeam(id, false, 'Bar Los Pinos', null, ['u2', 'u5', 'u6', 'u7']),
@@ -496,7 +643,7 @@ const matches: MockMatch[] = [];
     homeScore: 1,
     awayScore: 5,
     createdById: 'u1',
-    competitionId: null,
+    competitionId: 'comp1',
     teams: [
       mkTeam(id, true, 'Los Albirrojos', 'c1', ['u1', 'u5', 'u6', 'u7']),
       mkTeam(id, false, 'Tsunami FC', null, ['u3', 'u4', 'u8']),
@@ -537,6 +684,7 @@ export const mockDb = {
   users,
   clubs,
   matches,
+  competitions,
   votes: [] as MockVote[],
   stats: [] as MockStat[],
 
@@ -544,6 +692,7 @@ export const mockDb = {
   getUser: (id: string) => users.find((u) => u.id === id),
   getClub: (id: string) => clubs.find((c) => c.id === id),
   getMatch: (id: string) => matches.find((m) => m.id === id),
+  getCompetition: (id: string) => competitions.find((c) => c.id === id),
 
   // Current user helper
   get currentUser(): MockUser {
