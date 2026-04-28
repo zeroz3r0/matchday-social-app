@@ -101,7 +101,7 @@ describe('anonymizeUser', () => {
     await anonymizeUser('user-bye', tx as any);
 
     expect(tx.user.update).toHaveBeenCalledTimes(1);
-    const updateCall = tx.user.update.mock.calls[0][0] as any;
+    const updateCall = (tx.user.update.mock.calls[0]?.[0] ?? {}) as any;
     expect(updateCall.where).toEqual({ id: 'user-bye' });
     // Nickname goes to a unique-safe DB value; projection layer maps it to
     // "Usuario eliminado" at read time (design §4.3).
@@ -120,7 +120,7 @@ describe('anonymizeUser', () => {
     await anonymizeUser('user-bye', tx as any);
 
     expect(tx.clubMember.deleteMany).toHaveBeenCalledTimes(1);
-    const arg = tx.clubMember.deleteMany.mock.calls[0][0] as any;
+    const arg = (tx.clubMember.deleteMany.mock.calls[0]?.[0] ?? {}) as any;
     expect(arg.where.userId).toBe('user-bye');
   });
 
