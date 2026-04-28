@@ -148,7 +148,12 @@ const realUserApi = {
 };
 
 const realMatchApi = {
-  list: (params?: { status?: string; limit?: number; offset?: number }) => {
+  list: (params?: {
+    status?: string;
+    competitionId?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     const qs = params
       ? '?' +
         new URLSearchParams(

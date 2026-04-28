@@ -110,9 +110,17 @@ export const userApi = {
 // ─── Matches ────────────────────────────────────────────────────────────────
 
 export const matchApi = {
-  list: async (params?: { status?: string; limit?: number; offset?: number }) => {
+  list: async (params?: {
+    status?: string;
+    competitionId?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     await delay();
     let items: MockMatch[] = [...mockDb.matches];
+    if (params?.competitionId !== undefined) {
+      items = items.filter((m) => m.competitionId === params.competitionId);
+    }
     if (params?.status) {
       items = items.filter((m) => m.status === params.status);
     }
@@ -404,9 +412,77 @@ export const competitionApi = {
     return { success: true as const };
   },
 
-  getStandings: async (_competitionId: string) => {
+  getStandings: async (competitionId: string) => {
     await delay();
-    return { success: true as const, data: [] };
+
+    // Aggregate per-club W/D/L/GF/GA/Pts from COMPLETED matches in this comp.
+    interface Acc {
+      clubId: string;
+      clubName: string;
+      clubCrest: string | null;
+      played: number;
+      won: number;
+      drawn: number;
+      lost: number;
+      goalsFor: number;
+      goalsAgainst: number;
+      points: number;
+    }
+    const acc = new Map<string, Acc>();
+
+    const upsert = (clubId: string | null, gf: number, ga: number) => {
+      if (!clubId) return;
+      const club = mockDb.getClub(clubId);
+      if (!club) return;
+      const cur: Acc = acc.get(clubId) ?? {
+        clubId,
+        clubName: club.name,
+        clubCrest: club.badgeUrl,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        points: 0,
+      };
+      cur.played += 1;
+      cur.goalsFor += gf;
+      cur.goalsAgainst += ga;
+      if (gf > ga) {
+        cur.won += 1;
+        cur.points += 3;
+      } else if (gf === ga) {
+        cur.drawn += 1;
+        cur.points += 1;
+      } else {
+        cur.lost += 1;
+      }
+      acc.set(clubId, cur);
+    };
+
+    for (const m of mockDb.matches) {
+      if (m.competitionId !== competitionId) continue;
+      if (m.status !== 'COMPLETED') continue;
+      if (m.homeScore === null || m.awayScore === null) continue;
+      const home = m.teams.find((t) => t.isHome);
+      const away = m.teams.find((t) => !t.isHome);
+      upsert(home?.clubId ?? null, m.homeScore, m.awayScore);
+      upsert(away?.clubId ?? null, m.awayScore, m.homeScore);
+    }
+
+    const rows = Array.from(acc.values()).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      const gdA = a.goalsFor - a.goalsAgainst;
+      const gdB = b.goalsFor - b.goalsAgainst;
+      if (gdB !== gdA) return gdB - gdA;
+      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+      return a.clubName.localeCompare(b.clubName);
+    });
+
+    const ranked = rows.map((r, i) => ({ rank: i + 1, ...r }));
+
+    return { success: true as const, data: ranked };
   },
 
   getBrackets: async (_competitionId: string) => {
