@@ -25,6 +25,7 @@ import { voteRoutes } from './routes/votes';
 import { clubRoutes } from './routes/clubs';
 import { competitionRoutes } from './routes/competitions';
 import { rankingRoutes } from './routes/rankings';
+import { legalRoutes } from './routes/legal';
 
 const app = express();
 
@@ -94,6 +95,7 @@ app.use('/api/votes', voteRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/competitions', competitionRoutes);
 app.use('/api/rankings', rankingRoutes);
+app.use('/api/legal', legalRoutes);
 
 // ─── Error Handlers (Sentry first, then custom envelope handler) ──────────
 // REQ-BS-3: Sentry errorHandler MUST be mounted BEFORE the custom errorHandler
