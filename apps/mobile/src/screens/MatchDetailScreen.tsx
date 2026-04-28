@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C, STATUS, GAME_COLORS } from '../utils/theme';
 
@@ -29,6 +30,7 @@ export function MatchDetailScreen({ route, navigation }: any) {
       const r = await matchApi.getById(matchId);
       setMatch(r.data);
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message || 'No se pudo cargar');
     } finally {
       setLoading(false);
@@ -50,6 +52,7 @@ export function MatchDetailScreen({ route, navigation }: any) {
       fetchMatch();
       setShowScoreForm(false);
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     } finally {
       setCompleting(false);
@@ -62,6 +65,7 @@ export function MatchDetailScreen({ route, navigation }: any) {
       showAlert('OK', `Invitación ${status === 'ACCEPTED' ? 'aceptada' : 'rechazada'}`);
       fetchMatch();
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     }
   };

@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { competitionApi, clubApi } from '../../services/api';
+import { captureException } from '../../lib/sentry';
 import { showAlert } from '../../utils/alert';
 import { C } from '../../utils/theme';
 import { useCompetitionDetail } from '../CompetitionDetailScreen';
@@ -63,8 +64,9 @@ export function InfoTab() {
           badgeUrl: c.badgeUrl,
         }));
         setUserClubs(clubs);
-      } catch {
+      } catch (err) {
         if (aborted) return;
+        captureException(err);
         setUserClubs([]);
       } finally {
         if (!aborted) setLoadingClubs(false);
@@ -85,6 +87,7 @@ export function InfoTab() {
       setPickerOpen(false);
       showAlert('¡Listo!', 'Te inscribiste correctamente', () => refetch());
     } catch (err) {
+      captureException(err);
       const message = err instanceof Error ? err.message : 'No se pudo inscribir';
       showAlert('Error', message);
     } finally {

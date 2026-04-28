@@ -22,6 +22,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { competitionApi } from '../services/api';
 import type { WireCompetition } from '../services/api';
+import { captureException } from '../lib/sentry';
+import { ErrorView } from '../components/ErrorView';
 import type { CompetitionStackParamList } from '../navigation/RootNavigator';
 import { C, IMG, GAME_COLORS } from '../utils/theme';
 
@@ -93,6 +95,7 @@ export function CompetitionListScreen({ navigation }: Props) {
       setNextCursor(result.pagination.nextCursor);
       setHasMore(result.pagination.hasMore);
     } catch (err) {
+      captureException(err);
       const message =
         err instanceof Error ? err.message : 'No se pudieron cargar las competiciones';
       setError(message);
@@ -232,13 +235,7 @@ export function CompetitionListScreen({ navigation }: Props) {
           <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : error !== null ? (
-        <View style={[s.center, { flex: 1, paddingHorizontal: 24 }]}>
-          <Ionicons name="alert-circle-outline" size={56} color={C.red} />
-          <Text style={s.errorT}>{error}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => fetchPage('initial')}>
-            <Text style={s.retryT}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorView message={error} retry={() => fetchPage('initial')} />
       ) : (
         <FlatList
           data={data}

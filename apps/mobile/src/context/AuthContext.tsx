@@ -5,7 +5,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getItem, setItem, deleteItem } from '../utils/storage';
 import { authApi, userApi } from '../services/api';
-import { setUser as sentrySetUser } from '../lib/sentry';
+import { setUser as sentrySetUser, captureException } from '../lib/sentry';
 
 interface User {
   id: string;
@@ -54,11 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(res.data);
           sentrySetUser({ id: res.data.id, nickname: res.data.nickname });
         }
-      } catch {
+      } catch (err) {
+        captureException(err);
         try {
           await deleteItem('auth_token');
-        } catch {
-          /* ignore */
+        } catch (delErr) {
+          captureException(delErr);
         }
       } finally {
         clearTimeout(timeout);
@@ -96,8 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await deleteItem('auth_token');
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     }
     setUser(null);
     sentrySetUser(null);
@@ -107,8 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await userApi.getMe();
       setUser(res.data);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      captureException(err);
     }
   }, []);
 

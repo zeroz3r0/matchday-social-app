@@ -23,6 +23,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { competitionApi } from '../services/api';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import type { CompetitionStackParamList } from '../navigation/RootNavigator';
 import { C } from '../utils/theme';
@@ -134,6 +135,7 @@ export function CompetitionCreateScreen({ navigation }: Props) {
       await competitionApi.create(input);
       showAlert('¡Listo!', 'Competición creada', () => navigation.goBack());
     } catch (err) {
+      captureException(err);
       const message = err instanceof Error ? err.message : 'No se pudo crear la competición';
       setErrors({ general: message });
     } finally {

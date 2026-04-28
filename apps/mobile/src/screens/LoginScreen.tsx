@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C, IMG } from '../utils/theme';
 
@@ -30,6 +31,7 @@ export function LoginScreen({ navigation }: any) {
     try {
       await login(email, password);
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message || 'Credenciales incorrectas');
     } finally {
       setLoading(false);

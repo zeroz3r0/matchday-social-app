@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
@@ -32,6 +33,7 @@ export function RegisterScreen({ navigation }: any) {
     try {
       await register(form);
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     } finally {
       setLoading(false);

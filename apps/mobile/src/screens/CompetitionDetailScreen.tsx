@@ -20,6 +20,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { competitionApi } from '../services/api';
 import type { WireCompetitionDetail } from '../services/api';
+import { captureException } from '../lib/sentry';
 import type { CompetitionStackParamList } from '../navigation/RootNavigator';
 import { C, IMG, GAME_COLORS } from '../utils/theme';
 import { InfoTab } from './competition-detail/InfoTab';
@@ -65,6 +66,7 @@ export function CompetitionDetailScreen({ route, navigation }: Props) {
       const result = await competitionApi.getById(id);
       setDetail(result.data);
     } catch (err) {
+      captureException(err);
       const message = err instanceof Error ? err.message : 'No se pudo cargar la competición';
       setError(message);
     } finally {

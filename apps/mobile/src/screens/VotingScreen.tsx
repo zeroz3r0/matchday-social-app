@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { matchApi, voteApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
@@ -40,6 +41,7 @@ export function VotingScreen({ route, navigation }: any) {
         });
         setPlayers(all);
       } catch (err: any) {
+        captureException(err);
         showAlert('Error', err.message);
       } finally {
         setLoading(false);
@@ -68,6 +70,7 @@ export function VotingScreen({ route, navigation }: any) {
       if (failed > 0) showAlert('Aviso', `${failed} votos no se enviaron`);
       else showAlert('Votos enviados', 'Gracias por votar', () => navigation.goBack());
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     } finally {
       setSubmitting(false);

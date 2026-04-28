@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { matchApi, clubApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
+import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
 import { C } from '../utils/theme';
 
@@ -25,7 +26,7 @@ export function CreateMatchScreen({ navigation }: any) {
     clubApi
       .list()
       .then((r) => setClubs(r.data))
-      .catch(() => {});
+      .catch((err) => captureException(err));
   }, []);
 
   const handleCreate = async () => {
@@ -48,6 +49,7 @@ export function CreateMatchScreen({ navigation }: any) {
       });
       showAlert('Partido creado', 'Tu partido ha sido creado', () => navigation.goBack());
     } catch (err: any) {
+      captureException(err);
       showAlert('Error', err.message);
     } finally {
       setSubmitting(false);
