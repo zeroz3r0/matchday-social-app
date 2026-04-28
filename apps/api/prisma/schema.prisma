@@ -51,8 +51,24 @@ model User {
   confirmations    StatConfirmation[]
   votesGiven       PlayerVote[]      @relation("VoteGiver")
   votesReceived    PlayerVote[]      @relation("VoteReceiver")
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+// ─── PASSWORD RESET TOKENS ──────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, consumedAt])
+  @@map("password_reset_tokens")
 }
 
 enum PlayerPosition {
