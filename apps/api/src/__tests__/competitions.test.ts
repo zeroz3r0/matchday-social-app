@@ -296,17 +296,15 @@ describe('POST /api/competitions (regression after schema lift)', () => {
   });
 
   it('rejects unauthenticated request with 401', async () => {
-    const res = await request(app)
-      .post('/api/competitions')
-      .send({
-        name: 'Liga Test',
-        type: 'LEAGUE',
-        gameType: 'F7',
-        startDate: '2026-05-01T18:00:00.000Z',
-        latitude: -34.6,
-        longitude: -58.4,
-        city: 'Buenos Aires',
-      });
+    const res = await request(app).post('/api/competitions').send({
+      name: 'Liga Test',
+      type: 'LEAGUE',
+      gameType: 'F7',
+      startDate: '2026-05-01T18:00:00.000Z',
+      latitude: -34.6,
+      longitude: -58.4,
+      city: 'Buenos Aires',
+    });
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('UNAUTHORIZED');
