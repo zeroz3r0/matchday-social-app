@@ -6,6 +6,49 @@
 
 import { getItem } from '../utils/storage';
 import * as mock from './mockApi';
+import type { ListCompetitionsQuery } from '@matchday/shared';
+
+// ─── Wire types — Competition (dates as ISO strings on the wire) ────────────
+
+export interface WireCompetition {
+  id: string;
+  name: string;
+  type: 'LEAGUE' | 'TOURNAMENT' | 'KNOCKOUT';
+  gameType: 'F5' | 'F7' | 'F11';
+  description: string | null;
+  startDate: string; // ISO
+  endDate: string | null; // ISO
+  city: string;
+  latitude: number;
+  longitude: number;
+  createdById: string;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+}
+
+export interface WireCompetitionCreator {
+  id: string;
+  nickname: string;
+}
+
+export interface WireCompetitionClubLink {
+  club: {
+    id: string;
+    name: string;
+    badgeUrl: string | null;
+  };
+}
+
+export interface WireCompetitionDetail extends WireCompetition {
+  createdBy: WireCompetitionCreator;
+  clubs: WireCompetitionClubLink[];
+}
+
+export interface WireCompetitionListResponse {
+  success: true;
+  data: WireCompetition[];
+  pagination: { nextCursor: string | null; hasMore: boolean };
+}
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -186,6 +229,20 @@ const realCompetitionApi = {
     request<{ success: true; data: any[] }>(`/competitions/${competitionId}/standings`),
   getBrackets: (competitionId: string) =>
     request<{ success: true; data: any[] }>(`/competitions/${competitionId}/brackets`),
+
+  list: (params?: Partial<ListCompetitionsQuery>): Promise<WireCompetitionListResponse> => {
+    const qs = params
+      ? new URLSearchParams(
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [k, String(v)]),
+        ).toString()
+      : '';
+    return request<WireCompetitionListResponse>(`/competitions${qs ? `?${qs}` : ''}`);
+  },
+
+  getById: (id: string): Promise<{ success: true; data: WireCompetitionDetail }> =>
+    request<{ success: true; data: WireCompetitionDetail }>(`/competitions/${id}`),
 };
 
 const realRankingApi = {
