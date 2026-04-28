@@ -6,7 +6,29 @@
 // Network latency simulated (150-300ms) for realistic feel.
 // ============================================================================
 
-import { mockDb, delay, mockId, currentUserId, type MockUser, type MockMatch } from './mockDb';
+import {
+  mockDb,
+  delay,
+  mockId,
+  currentUserId,
+  encodeMockCursor,
+  decodeMockCursor,
+  type MockUser,
+  type MockMatch,
+  type MockCompetition,
+  type CompetitionType,
+  type CompetitionGameType,
+} from './mockDb';
+
+// ─── Competition list params (mirrors backend ListCompetitionsQuery) ────────
+
+interface MockCompetitionListParams {
+  city?: string;
+  type?: CompetitionType;
+  gameType?: CompetitionGameType;
+  cursor?: string;
+  limit?: number;
+}
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
@@ -390,6 +412,103 @@ export const competitionApi = {
   getBrackets: async (_competitionId: string) => {
     await delay();
     return { success: true as const, data: [] };
+  },
+
+  list: async (params?: MockCompetitionListParams) => {
+    await delay();
+
+    // Validate limit (default 20, must be int in [1, 100])
+    const rawLimit = params?.limit;
+    let limit = 20;
+    if (rawLimit !== undefined) {
+      if (
+        typeof rawLimit !== 'number' ||
+        !Number.isInteger(rawLimit) ||
+        rawLimit < 1 ||
+        rawLimit > 100
+      ) {
+        throw new MockApiError(400, 'INVALID_LIMIT', 'Limit must be an integer between 1 and 100');
+      }
+      limit = rawLimit;
+    }
+
+    // 1. apply filters (skip undefined)
+    let items: MockCompetition[] = mockDb.competitions.filter((c) => {
+      if (params?.city !== undefined && c.city !== params.city) return false;
+      if (params?.type !== undefined && c.type !== params.type) return false;
+      if (params?.gameType !== undefined && c.gameType !== params.gameType) return false;
+      return true;
+    });
+
+    // 2. sort (createdAt DESC, id DESC)
+    items.sort((a, b) => {
+      if (a.createdAt !== b.createdAt) {
+        return a.createdAt < b.createdAt ? 1 : -1;
+      }
+      return a.id < b.id ? 1 : -1;
+    });
+
+    // 3. cursor decode + drop
+    if (params?.cursor !== undefined && params.cursor !== '') {
+      const cur = decodeMockCursor(params.cursor);
+      if (!cur) {
+        throw new MockApiError(400, 'INVALID_CURSOR', 'Cursor invalido');
+      }
+      items = items.filter(
+        (c) => c.createdAt < cur.createdAt || (c.createdAt === cur.createdAt && c.id < cur.id),
+      );
+    }
+
+    // 4. take next `limit`
+    const page = items.slice(0, limit);
+
+    // 5. nextCursor + hasMore
+    const lastItem = page.length === limit ? page[page.length - 1] : undefined;
+    const hasMore = lastItem !== undefined && items.length > limit;
+    const nextCursor =
+      hasMore && lastItem !== undefined ? encodeMockCursor(lastItem.createdAt, lastItem.id) : null;
+
+    return {
+      success: true as const,
+      data: page,
+      pagination: { nextCursor, hasMore },
+    };
+  },
+
+  getById: async (id: string) => {
+    await delay();
+    const comp = mockDb.getCompetition(id);
+    if (!comp) {
+      throw new MockApiError(404, 'NOT_FOUND', 'Competicion no encontrada');
+    }
+
+    const creator = mockDb.getUser(comp.creatorId);
+    if (!creator) {
+      // seed integrity guard — should never hit
+      throw new MockApiError(500, 'SEED_INTEGRITY', 'Creador de competicion no encontrado');
+    }
+
+    const clubs = comp.clubIds
+      .map((cid) => {
+        const club = mockDb.getClub(cid);
+        return club
+          ? {
+              club: { id: club.id, name: club.name, badgeUrl: club.badgeUrl },
+            }
+          : null;
+      })
+      .filter(
+        (x): x is { club: { id: string; name: string; badgeUrl: string | null } } => x !== null,
+      );
+
+    return {
+      success: true as const,
+      data: {
+        ...comp,
+        createdBy: { id: creator.id, nickname: creator.nickname },
+        clubs,
+      },
+    };
   },
 };
 
