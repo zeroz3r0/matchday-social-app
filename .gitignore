@@ -58,3 +58,6 @@ npm-debug.log*
 
 # Skill registry (generated locally per machine)
 .atl/
+
+# Engram persistent memory (local DB + session state)
+.engram/
