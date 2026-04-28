@@ -54,6 +54,11 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
 
     let query: string;
 
+    // REQ-AD-5: rankings list filters out soft-deleted users entirely (no
+    // anonymized rows) so the leaderboard always reflects real, active
+    // players. Applied at the SQL level via `u.deleted_at IS NULL`.
+    const deletedFilter = 'AND u.deleted_at IS NULL';
+
     switch (filters.category) {
       case 'GOALS':
         query = `
@@ -62,7 +67,7 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
           FROM users u
           LEFT JOIN match_stats ms ON ms.player_id = u.id
             AND ms.validation_status IN ('CONFIRMED', 'AUTO_CONFIRMED')
-          WHERE u.latitude IS NOT NULL ${geoFilter}
+          WHERE u.latitude IS NOT NULL ${deletedFilter} ${geoFilter}
           GROUP BY u.id
           ORDER BY value DESC
           LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -76,7 +81,7 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
           FROM users u
           LEFT JOIN match_stats ms ON ms.player_id = u.id
             AND ms.validation_status IN ('CONFIRMED', 'AUTO_CONFIRMED')
-          WHERE u.latitude IS NOT NULL ${geoFilter}
+          WHERE u.latitude IS NOT NULL ${deletedFilter} ${geoFilter}
           GROUP BY u.id
           ORDER BY value DESC
           LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -89,7 +94,7 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
                  ROUND(COALESCE(AVG(pv.rating), 0)::numeric, 1)::float as value
           FROM users u
           LEFT JOIN player_votes pv ON pv.target_player_id = u.id
-          WHERE u.latitude IS NOT NULL ${geoFilter}
+          WHERE u.latitude IS NOT NULL ${deletedFilter} ${geoFilter}
           GROUP BY u.id
           HAVING COUNT(pv.id) > 0
           ORDER BY value DESC
@@ -107,7 +112,7 @@ rankingRoutes.get('/', async (req: Request, res: Response, next: NextFunction) =
                       OR mr.away_team_mvp_id = u.id
                  )::int as value
           FROM users u
-          WHERE u.latitude IS NOT NULL ${geoFilter}
+          WHERE u.latitude IS NOT NULL ${deletedFilter} ${geoFilter}
           ORDER BY value DESC
           LIMIT $${params.length + 1} OFFSET $${params.length + 2}
         `;

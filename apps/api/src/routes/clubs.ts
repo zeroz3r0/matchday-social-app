@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { userPublicProjection } from '../utils/userPublicProjection';
 
 export const clubRoutes = Router();
 
@@ -50,7 +51,15 @@ clubRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
       include: {
         members: {
           include: {
-            user: { select: { id: true, nickname: true, avatarUrl: true, position: true } },
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+                avatarUrl: true,
+                position: true,
+                deletedAt: true,
+              },
+            },
           },
         },
       },
@@ -63,7 +72,24 @@ clubRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
       return;
     }
 
-    res.json({ success: true, data: club });
+    // REQ-AD-5: anonymize each member's user object.
+    const projected = {
+      ...club,
+      members: club.members.map((m) => {
+        const proj = userPublicProjection(m.user);
+        return {
+          ...m,
+          user: {
+            id: proj.id,
+            nickname: proj.nickname,
+            avatarUrl: proj.avatarUrl,
+            position: m.user.position,
+          },
+        };
+      }),
+    };
+
+    res.json({ success: true, data: projected });
   } catch (error) {
     next(error);
   }

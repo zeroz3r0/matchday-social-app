@@ -9,6 +9,7 @@ import { authenticate } from '../middleware/auth';
 import { sendMultiplePushNotifications } from '../utils/notifications';
 import { AppError } from '../middleware/errorHandler';
 import { VOTING_WINDOW_HOURS, STAT_AUTO_CONFIRM_HOURS, LEAGUE_POINTS } from '@matchday/shared';
+import { userPublicProjection } from '../utils/userPublicProjection';
 
 export const matchRoutes = Router();
 
@@ -177,7 +178,15 @@ matchRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) 
           include: {
             players: {
               include: {
-                user: { select: { id: true, nickname: true, avatarUrl: true, position: true } },
+                user: {
+                  select: {
+                    id: true,
+                    nickname: true,
+                    avatarUrl: true,
+                    position: true,
+                    deletedAt: true,
+                  },
+                },
               },
             },
           },
@@ -194,7 +203,27 @@ matchRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) 
       return;
     }
 
-    res.json({ success: true, data: match });
+    // REQ-AD-5: anonymize each match player's user object (preserve FK shape).
+    const projected = {
+      ...match,
+      teams: match.teams.map((team) => ({
+        ...team,
+        players: team.players.map((p) => {
+          const proj = userPublicProjection(p.user);
+          return {
+            ...p,
+            user: {
+              id: proj.id,
+              nickname: proj.nickname,
+              avatarUrl: proj.avatarUrl,
+              position: p.user.position,
+            },
+          };
+        }),
+      })),
+    };
+
+    res.json({ success: true, data: projected });
   } catch (error) {
     next(error);
   }
@@ -597,7 +626,11 @@ matchRoutes.get('/', authenticate, async (req: Request, res: Response, next: Nex
           teams: {
             include: {
               players: {
-                include: { user: { select: { id: true, nickname: true, avatarUrl: true } } },
+                include: {
+                  user: {
+                    select: { id: true, nickname: true, avatarUrl: true, deletedAt: true },
+                  },
+                },
               },
             },
           },
@@ -609,9 +642,25 @@ matchRoutes.get('/', authenticate, async (req: Request, res: Response, next: Nex
       prisma.match.count({ where }),
     ]);
 
+    // REQ-AD-5: anonymize player user objects in each match team. Same shape
+    // as detail endpoint — projection re-runs per row.
+    const projected = matches.map((m) => ({
+      ...m,
+      teams: m.teams.map((team) => ({
+        ...team,
+        players: team.players.map((p) => {
+          const proj = userPublicProjection(p.user);
+          return {
+            ...p,
+            user: { id: proj.id, nickname: proj.nickname, avatarUrl: proj.avatarUrl },
+          };
+        }),
+      })),
+    }));
+
     res.json({
       success: true,
-      data: matches,
+      data: projected,
       pagination: {
         total,
         page: Math.floor(offset / limit) + 1,
