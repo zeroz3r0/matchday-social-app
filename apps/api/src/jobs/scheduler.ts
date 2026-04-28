@@ -5,14 +5,27 @@
 import cron from 'node-cron';
 import { prisma } from '../utils/prisma';
 import { sendMultiplePushNotifications } from '../utils/notifications';
+import { registerLegalCronJobs } from './legalCronJobs';
 
 /**
  * Start all scheduled jobs:
  * 1. Auto-confirm stats after 24h without objections (every 5 min)
  * 2. Auto-close voting windows after 12h (every 5 min)
+ * 3. Daily hard-delete cron at 03:00 UTC (REQ-AD-6, legal-foundation)
+ * 4. Hourly data-export sweep (REQ-DE-2, legal-foundation)
  */
 export function startScheduledJobs(): void {
   console.log('[CRON] Scheduled jobs started');
+
+  // ─── Legal cron jobs (hard-delete + export sweep) ───────────────────
+  // Test mode skips the registration entirely so vitest never accidentally
+  // schedules cron callbacks against a live timer.
+  if (process.env['NODE_ENV'] !== 'test') {
+    const legalJobs = registerLegalCronJobs();
+    legalJobs.hardDelete.start();
+    legalJobs.exportSweep.start();
+    console.log('[CRON] Legal cron jobs registered (hard-delete daily 03:00 UTC + export sweep hourly)');
+  }
 
   // ─── Auto-confirm pending stats ─────────────────────────────────────
   cron.schedule('*/5 * * * *', async () => {
