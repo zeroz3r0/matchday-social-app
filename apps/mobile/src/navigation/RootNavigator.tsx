@@ -16,13 +16,35 @@ import { CreateMatchScreen } from '../screens/CreateMatchScreen';
 import { RankingsScreen } from '../screens/RankingsScreen';
 import { ClubsScreen } from '../screens/ClubsScreen';
 import { VotingScreen } from '../screens/VotingScreen';
+import { CompetitionListScreen } from '../screens/CompetitionListScreen';
+import { CompetitionDetailScreen } from '../screens/CompetitionDetailScreen';
+import { CompetitionCreateScreen } from '../screens/CompetitionCreateScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+export type CompetitionStackParamList = {
+  CompetitionList: undefined;
+  CompetitionDetail: { id: string };
+  CompetitionCreate: undefined;
+};
+
+const CompStack = createNativeStackNavigator<CompetitionStackParamList>();
+
+function CompetitionStack() {
+  return (
+    <CompStack.Navigator screenOptions={{ headerShown: false }}>
+      <CompStack.Screen name="CompetitionList" component={CompetitionListScreen} />
+      <CompStack.Screen name="CompetitionDetail" component={CompetitionDetailScreen} />
+      <CompStack.Screen name="CompetitionCreate" component={CompetitionCreateScreen} />
+    </CompStack.Navigator>
+  );
+}
+
 const TAB_ICONS: Record<string, { active: any; inactive: any }> = {
   Home: { active: 'football', inactive: 'football-outline' },
   Rankings: { active: 'trophy', inactive: 'trophy-outline' },
+  Competitions: { active: 'podium', inactive: 'podium-outline' },
   Clubs: { active: 'shield', inactive: 'shield-outline' },
   Profile: { active: 'person', inactive: 'person-outline' },
 };
@@ -53,6 +75,11 @@ function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Partidos' }} />
       <Tab.Screen name="Rankings" component={RankingsScreen} options={{ title: 'Ranking' }} />
+      <Tab.Screen
+        name="Competitions"
+        component={CompetitionStack}
+        options={{ title: 'Competiciones' }}
+      />
       <Tab.Screen name="Clubs" component={ClubsScreen} options={{ title: 'Clubes' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
