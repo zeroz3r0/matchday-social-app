@@ -6,8 +6,15 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
+import { sendEmail } from '../services/email';
+import { Sentry } from '../lib/sentry';
+import { userPublicProjection, type UserPublicShape } from '../utils/userPublicProjection';
 
 export const userRoutes = Router();
+
+// 30 days grace window for restoring a soft-deleted account (REQ-AD-3 / 6).
+const GRACE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 // ─── GET /api/users/me — Mi perfil ─────────────────────────────────────────
 
@@ -107,6 +114,7 @@ userRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
         bio: true,
         city: true,
         createdAt: true,
+        deletedAt: true,
       },
     });
 
@@ -139,10 +147,19 @@ userRoutes.get('/:id', async (req: Request, res: Response, next: NextFunction) =
       _count: true,
     });
 
+    // REQ-AD-5: anonymize fields when soft-deleted; ID + position + createdAt
+    // stay so match history / FK references keep working.
+    const projected: UserPublicShape = userPublicProjection(user);
     res.json({
       success: true,
       data: {
-        ...user,
+        id: projected.id,
+        nickname: projected.nickname,
+        avatarUrl: projected.avatarUrl,
+        position: user.position,
+        bio: projected.bio,
+        city: projected.city,
+        createdAt: user.createdAt,
         medals: {
           mvpCount,
           totalGoals: medals._sum.goals || 0,
@@ -209,3 +226,106 @@ userRoutes.patch('/me', authenticate, async (req: Request, res: Response, next: 
     next(error);
   }
 });
+
+// ─── POST /api/users/me/delete (REQ-AD-1, REQ-AD-2) ─────────────────────────
+//
+// Soft-delete: mark `deletedAt = now()`. The hard-delete cron runs after the
+// 30-day grace window (REQ-AD-6, Phase F). Idempotent — second call returns
+// 204 without touching `deletedAt` or sending a second email.
+
+userRoutes.post(
+  '/me/delete',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.userId;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, nickname: true, deletedAt: true },
+      });
+      if (!user) {
+        throw new AppError(404, 'NOT_FOUND', 'Usuario no encontrado');
+      }
+
+      // REQ-AD-1: idempotent re-call.
+      if (user.deletedAt) {
+        res.status(204).send();
+        return;
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { deletedAt: new Date() },
+      });
+
+      // REQ-AD-2: confirmation email is fire-and-forget — failures are
+      // captured to Sentry but never block the soft-delete from succeeding.
+      // Mobile UX shows the banner regardless of email delivery.
+      const html =
+        `<p>Hola ${user.nickname}, tu cuenta de matchday se eliminará en 30 días.</p>` +
+        `<p>Si fue un error, iniciá sesión antes de ese plazo y restaurala desde el banner.</p>`;
+      sendEmail({
+        to: user.email,
+        subject: 'Tu cuenta de matchday — eliminación programada',
+        html,
+      }).catch((err) => Sentry.captureException(err));
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ─── POST /api/users/me/delete/cancel (REQ-AD-3) ────────────────────────────
+//
+// Restore a soft-deleted account within the 30-day grace window. After the
+// window the account is past the cron cutoff (or already anonymized) and
+// cannot be restored — return 410 GRACE_PERIOD_EXPIRED.
+
+userRoutes.post(
+  '/me/delete/cancel',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.userId;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, nickname: true, deletedAt: true },
+      });
+      if (!user) {
+        throw new AppError(404, 'NOT_FOUND', 'Usuario no encontrado');
+      }
+      if (!user.deletedAt) {
+        throw new AppError(400, 'NOT_DELETED', 'La cuenta no está eliminada');
+      }
+
+      const cutoff = new Date(Date.now() - GRACE_WINDOW_MS);
+      if (user.deletedAt < cutoff) {
+        throw new AppError(
+          410,
+          'GRACE_PERIOD_EXPIRED',
+          'La ventana de 30 días para restaurar la cuenta ya expiró',
+        );
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { deletedAt: null },
+      });
+
+      const html = `<p>Hola ${user.nickname}, tu cuenta de matchday fue restaurada.</p>`;
+      sendEmail({
+        to: user.email,
+        subject: 'Cuenta restaurada',
+        html,
+      }).catch((err) => Sentry.captureException(err));
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
