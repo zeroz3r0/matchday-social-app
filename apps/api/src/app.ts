@@ -10,6 +10,11 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 
+// Sentry MUST init at the top of the module — before any middleware/routes —
+// so its handlers can wrap the entire request lifecycle (REQ-BS-2/3).
+import { initSentry, Sentry } from './lib/sentry';
+initSentry();
+
 import { errorHandler } from './middleware/errorHandler';
 import { logger, REDACT_PATHS } from './utils/logger';
 import { checkHealth } from './services/health';
@@ -22,6 +27,9 @@ import { competitionRoutes } from './routes/competitions';
 import { rankingRoutes } from './routes/rankings';
 
 const app = express();
+
+// ─── Sentry Request Handler (MUST be FIRST middleware — REQ-BS-2) ──────────
+app.use(Sentry.Handlers.requestHandler());
 
 // ─── Global Middleware ──────────────────────────────────────────────────────
 
@@ -87,8 +95,12 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api/competitions', competitionRoutes);
 app.use('/api/rankings', rankingRoutes);
 
-// ─── Error Handler (must be last) ──────────────────────────────────────────
+// ─── Error Handlers (Sentry first, then custom envelope handler) ──────────
+// REQ-BS-3: Sentry errorHandler MUST be mounted BEFORE the custom errorHandler
+// so unknown errors are captured before the response envelope is built.
+// REQ-BS-4: Custom handler retains envelope shape — Sentry only captures.
 
+app.use(Sentry.Handlers.errorHandler());
 app.use(errorHandler);
 
 export default app;
