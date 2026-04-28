@@ -4,23 +4,12 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { createCompetitionSchema, registerClubSchema } from '@matchday/shared';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 
 export const competitionRoutes = Router();
-
-const createCompetitionSchema = z.object({
-  name: z.string().min(2).max(60),
-  type: z.enum(['LEAGUE', 'TOURNAMENT']),
-  gameType: z.enum(['F5', 'F7', 'F11']),
-  description: z.string().max(1000).optional(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime().optional(),
-  latitude: z.number(),
-  longitude: z.number(),
-  city: z.string().max(100),
-});
 
 // ─── POST /api/competitions ─────────────────────────────────────────────────
 
@@ -55,7 +44,7 @@ competitionRoutes.post(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { clubId } = z.object({ clubId: z.string() }).parse(req.body);
+      const { clubId } = registerClubSchema.parse(req.body);
       const competitionId = req.params['id']!;
 
       const competition = await prisma.competition.findUnique({ where: { id: competitionId } });
