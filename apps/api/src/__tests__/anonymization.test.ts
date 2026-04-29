@@ -43,6 +43,12 @@ function makeTxMock(userRow: Record<string, unknown> | null) {
         return Promise.resolve({ count: 0 });
       }),
     },
+    pushToken: {
+      deleteMany: vi.fn((arg: unknown) => {
+        txCalls.push({ table: 'pushToken', op: 'deleteMany', arg });
+        return Promise.resolve({ count: 2 });
+      }),
+    },
     // KEEP tables — these MUST NOT be touched by anonymizeUser.
     match: {
       deleteMany: vi.fn(() => Promise.reject(new Error('match.deleteMany should not be called'))),
@@ -123,6 +129,15 @@ describe('anonymizeUser', () => {
 
     expect(tx.clubMember.deleteMany).toHaveBeenCalledTimes(1);
     const arg = (tx.clubMember.deleteMany.mock.calls[0]?.[0] ?? {}) as any;
+    expect(arg.where.userId).toBe('user-bye');
+  });
+
+  it('deletes PushToken rows for the user (D.6 — push-notifications-real-impl)', async () => {
+    const tx = makeTxMock({ id: 'user-bye' });
+    await anonymizeUser('user-bye', tx as any);
+
+    expect(tx.pushToken.deleteMany).toHaveBeenCalledTimes(1);
+    const arg = (tx.pushToken.deleteMany.mock.calls[0]?.[0] ?? {}) as any;
     expect(arg.where.userId).toBe('user-bye');
   });
 
