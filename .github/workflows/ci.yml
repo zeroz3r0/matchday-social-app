@@ -18,6 +18,11 @@ jobs:
 
       - run: npm ci
 
+      # Security audit gate — fail the build on any high or critical vuln.
+      # Moderate-and-below are tracked in the PR-body audit table, not blocked here.
+      - name: Security audit (high+)
+        run: npm audit --audit-level=high
+
       # Generate Prisma client (required by API tests)
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
 

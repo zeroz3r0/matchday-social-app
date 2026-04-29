@@ -88,33 +88,25 @@ export async function runExportSweepTick(): Promise<void> {
 // ─── Cron registration helpers ──────────────────────────────────────────────
 //
 // These return ScheduledTask handles so callers (scheduler.ts) can stop them
-// in tests or graceful shutdown. Tasks are created with `scheduled: false`
-// so they only start when the caller explicitly calls `.start()`.
+// in tests or graceful shutdown. node-cron@4 tasks do not auto-start, so the
+// caller is responsible for invoking `.start()` explicitly (see scheduler.ts).
 
 export function registerLegalCronJobs(): { hardDelete: ScheduledTask; exportSweep: ScheduledTask } {
-  const hardDelete = cron.schedule(
-    '0 3 * * *',
-    async () => {
-      try {
-        await runHardDeleteTick();
-      } catch (err) {
-        logger.error({ err }, 'hard_delete_tick_unhandled');
-      }
-    },
-    { scheduled: false },
-  );
+  const hardDelete = cron.schedule('0 3 * * *', async () => {
+    try {
+      await runHardDeleteTick();
+    } catch (err) {
+      logger.error({ err }, 'hard_delete_tick_unhandled');
+    }
+  });
 
-  const exportSweep = cron.schedule(
-    '0 * * * *',
-    async () => {
-      try {
-        await runExportSweepTick();
-      } catch (err) {
-        logger.error({ err }, 'export_sweep_tick_unhandled');
-      }
-    },
-    { scheduled: false },
-  );
+  const exportSweep = cron.schedule('0 * * * *', async () => {
+    try {
+      await runExportSweepTick();
+    } catch (err) {
+      logger.error({ err }, 'export_sweep_tick_unhandled');
+    }
+  });
 
   return { hardDelete, exportSweep };
 }
