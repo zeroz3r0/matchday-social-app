@@ -2,8 +2,9 @@
 // Account Deletion Service — anonymizeUser (REQ-AD-7)
 //
 // Verifies:
-// - User row mutated in place (nickname, email, avatar, bio, city, lat, lng,
-//   fcmToken scrubbed)
+// - User row mutated in place (nickname, email, avatar, bio, city, lat, lng
+//   scrubbed). PushToken cleanup is FK-cascade — covered in pushNotifications
+//   integration; see Phase D.
 // - ClubMember rows for the user deleted (membership ends)
 // - Match.createdById / MatchStat.playerId / PlayerVote.* /
 //   Competition.createdById preserved (KEEP-anonymize, FK history kept)
@@ -40,6 +41,12 @@ function makeTxMock(userRow: Record<string, unknown> | null) {
       deleteMany: vi.fn((arg: unknown) => {
         txCalls.push({ table: 'matchPlayer', op: 'deleteMany', arg });
         return Promise.resolve({ count: 0 });
+      }),
+    },
+    pushToken: {
+      deleteMany: vi.fn((arg: unknown) => {
+        txCalls.push({ table: 'pushToken', op: 'deleteMany', arg });
+        return Promise.resolve({ count: 2 });
       }),
     },
     // KEEP tables — these MUST NOT be touched by anonymizeUser.
@@ -95,7 +102,6 @@ describe('anonymizeUser', () => {
       city: 'Rosario',
       latitude: -34.6,
       longitude: -58.4,
-      fcmToken: 'fcm-x',
     });
 
     await anonymizeUser('user-bye', tx as any);
@@ -112,7 +118,9 @@ describe('anonymizeUser', () => {
     expect(updateCall.data.city).toBeNull();
     expect(updateCall.data.latitude).toBeNull();
     expect(updateCall.data.longitude).toBeNull();
-    expect(updateCall.data.fcmToken).toBeNull();
+    // fcmToken removed in push-notifications-real-impl; PushToken FK cascade
+    // handles cleanup at DB level.
+    expect(updateCall.data).not.toHaveProperty('fcmToken');
   });
 
   it('deletes ClubMember rows (membership ends — REQ-AD-7)', async () => {
@@ -121,6 +129,15 @@ describe('anonymizeUser', () => {
 
     expect(tx.clubMember.deleteMany).toHaveBeenCalledTimes(1);
     const arg = (tx.clubMember.deleteMany.mock.calls[0]?.[0] ?? {}) as any;
+    expect(arg.where.userId).toBe('user-bye');
+  });
+
+  it('deletes PushToken rows for the user (D.6 — push-notifications-real-impl)', async () => {
+    const tx = makeTxMock({ id: 'user-bye' });
+    await anonymizeUser('user-bye', tx as any);
+
+    expect(tx.pushToken.deleteMany).toHaveBeenCalledTimes(1);
+    const arg = (tx.pushToken.deleteMany.mock.calls[0]?.[0] ?? {}) as any;
     expect(arg.where.userId).toBe('user-bye');
   });
 

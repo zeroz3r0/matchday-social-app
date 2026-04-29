@@ -33,6 +33,9 @@ type TxClient = {
   clubMember: {
     deleteMany: (args: { where: { userId: string } }) => Promise<{ count: number }>;
   };
+  pushToken: {
+    deleteMany: (args: { where: { userId: string } }) => Promise<{ count: number }>;
+  };
 };
 
 const ANON_NICKNAME_PREFIX = 'usuario_eliminado_';
@@ -59,13 +62,19 @@ export async function anonymizeUser(userId: string, tx: TxClient): Promise<void>
       city: null,
       latitude: null,
       longitude: null,
-      fcmToken: null,
     },
   });
 
   // Membership rows DIE with the account — these aren't part of the historical
   // record (Match/Stat/Vote rows ARE, and stay).
   await tx.clubMember.deleteMany({ where: { userId } });
+
+  // PushToken rows DIE with the account. The User row stays (FK preservation
+  // for Match/Stat history), so the FK cascade never fires on delete — we
+  // explicitly purge tokens here. Stops the anonymized account from receiving
+  // any further pushes (REQ Migrate Legacy Call Sites + push-notifications-
+  // real-impl D.6).
+  await tx.pushToken.deleteMany({ where: { userId } });
 }
 
 export async function hardDeleteUser(userId: string, prisma: PrismaClient): Promise<void> {

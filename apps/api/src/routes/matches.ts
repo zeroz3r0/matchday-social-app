@@ -6,10 +6,21 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
-import { sendMultiplePushNotifications } from '../utils/notifications';
+import { sendToUser, sendToUsers } from '../services/pushNotifications';
 import { AppError } from '../middleware/errorHandler';
 import { VOTING_WINDOW_HOURS, STAT_AUTO_CONFIRM_HOURS, LEAGUE_POINTS } from '@matchday/shared';
 import { userPublicProjection } from '../utils/userPublicProjection';
+import { logger } from '../utils/logger';
+import { Sentry } from '../lib/sentry';
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatMatchDate(d: Date): string {
+  // Compact es-AR "DD/MM HH:mm" — non-localized to keep timezone-stable for
+  // server-side render. UI re-formats on client if needed.
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
 
 export const matchRoutes = Router();
 
@@ -110,22 +121,28 @@ matchRoutes.post('/', authenticate, async (req: Request, res: Response, next: Ne
       },
     });
 
-    // Send push notifications to invited players
-    const allPlayerIds = [...data.homeTeam.playerIds, ...data.awayTeam.playerIds].filter(
+    // Per-invitee push (REQ Trigger Match Invitation Created). One sendToUser
+    // per invitee — keeps the spec scenario phrasing 1:1 and lets each
+    // invitee's failure stay isolated. Trigger Resilience: never blocks the
+    // response; errors logged + Sentry captured (REQ Trigger Resilience).
+    const inviteeIds = [...data.homeTeam.playerIds, ...data.awayTeam.playerIds].filter(
       (pid) => pid !== userId,
     );
-
-    const users = await prisma.user.findMany({
-      where: { id: { in: allPlayerIds }, fcmToken: { not: null } },
-      select: { fcmToken: true },
-    });
-
-    const tokens = users.map((u) => u.fcmToken).filter(Boolean) as string[];
-    await sendMultiplePushNotifications(tokens, {
-      title: '⚽ Nueva convocatoria!',
-      body: `Te han invitado a un partido ${data.gameType}`,
-      data: { type: 'MATCH_INVITE', matchId: match.id },
-    });
+    const inviteWhen = formatMatchDate(scheduledAt);
+    for (const inviteeId of inviteeIds) {
+      sendToUser(
+        inviteeId,
+        {
+          title: 'Te invitaron a un partido',
+          body: `${data.gameType} ${inviteWhen}`,
+          data: { route: 'MatchDetail', params: { matchId: match.id } },
+        },
+        prisma,
+      ).catch((err) => {
+        logger.error({ err, matchId: match.id, inviteeId }, 'push_invite_failed');
+        Sentry.captureException(err);
+      });
+    }
 
     res.status(201).json({ success: true, data: match });
   } catch (error) {
@@ -418,17 +435,25 @@ matchRoutes.post(
         }
       }
 
-      // Notify players voting window open
+      // Notify players voting window open (REQ Trigger Match Completed → MVP
+      // Voting). Fire-and-forget; failure must not block the complete
+      // response (REQ Trigger Resilience).
       const players = await prisma.matchPlayer.findMany({
         where: { matchTeam: { matchId } },
-        include: { user: { select: { fcmToken: true } } },
+        select: { userId: true },
       });
-
-      const tokens = players.map((p) => p.user.fcmToken).filter(Boolean) as string[];
-      await sendMultiplePushNotifications(tokens, {
-        title: '🗳️ Vota a tu MVP!',
-        body: `Partido finalizado ${homeScore}-${awayScore}. Tienes 12h para votar.`,
-        data: { type: 'VOTE_REMINDER', matchId },
+      const playerIds = players.map((p) => p.userId);
+      sendToUsers(
+        playerIds,
+        {
+          title: 'Votá MVP del partido',
+          body: `${match.gameType} - ${formatMatchDate(match.scheduledAt)}`,
+          data: { route: 'MatchDetail', params: { matchId, openVoting: true } },
+        },
+        prisma,
+      ).catch((err) => {
+        logger.error({ err, matchId }, 'push_complete_voting_failed');
+        Sentry.captureException(err);
       });
 
       res.json({
@@ -587,6 +612,42 @@ matchRoutes.patch(
         where: { id: player.id },
         data: { invitationStatus: status },
       });
+
+      // REQ Trigger Invitation Accept/Decline — push to organizer. Lookup
+      // organizer (createdById) + responder nickname; fire-and-forget so a
+      // push failure can't block the response.
+      try {
+        const matchRow = await prisma.match.findUnique({
+          where: { id: matchId },
+          select: {
+            createdById: true,
+            gameType: true,
+            scheduledAt: true,
+          },
+        });
+        const responder = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { nickname: true },
+        });
+        if (matchRow && responder && matchRow.createdById !== userId) {
+          const action = status === 'ACCEPTED' ? 'confirmó' : 'rechazó';
+          sendToUser(
+            matchRow.createdById,
+            {
+              title: `${responder.nickname} ${action}`,
+              body: `${matchRow.gameType} - ${formatMatchDate(matchRow.scheduledAt)}`,
+              data: { route: 'MatchDetail', params: { matchId } },
+            },
+            prisma,
+          ).catch((err) => {
+            logger.error({ err, matchId, status }, 'push_invitation_response_failed');
+            Sentry.captureException(err);
+          });
+        }
+      } catch (err) {
+        logger.error({ err, matchId }, 'push_invitation_lookup_failed');
+        Sentry.captureException(err);
+      }
 
       res.json({
         success: true,

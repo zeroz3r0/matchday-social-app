@@ -87,7 +87,6 @@ export interface User {
   latitude: number | null;
   longitude: number | null;
   city: string | null;
-  fcmToken: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
