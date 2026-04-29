@@ -160,10 +160,7 @@ async function sendToTokens(
       });
 
       if (!response.ok) {
-        logger.error(
-          { status: response.status, batchSize: batch.length },
-          'expo_push_http_error',
-        );
+        logger.error({ status: response.status, batchSize: batch.length }, 'expo_push_http_error');
         Sentry.captureException(new Error(`Expo Push HTTP ${response.status}`));
         failed += batch.length;
         continue;

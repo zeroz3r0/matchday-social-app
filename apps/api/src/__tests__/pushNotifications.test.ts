@@ -26,11 +26,7 @@ vi.mock('../lib/sentry', () => ({
 }));
 
 import { Sentry } from '../lib/sentry';
-import {
-  sendToUser,
-  sendToUsers,
-  type PushPayload,
-} from '../services/pushNotifications';
+import { sendToUser, sendToUsers, type PushPayload } from '../services/pushNotifications';
 
 // In-memory prisma mock — only the methods this service uses.
 function makePrismaMock(opts: {
@@ -166,11 +162,11 @@ describe('sendToUser — DeviceNotRegistered cleanup', () => {
 
     const result = await sendToUser('lionel', PAYLOAD, prisma as never);
 
-    expect((prisma as { pushToken: { deleteMany: ReturnType<typeof vi.fn> } }).pushToken.deleteMany)
-      .toHaveBeenCalledTimes(1);
-    const arg = (
-      prisma as { pushToken: { deleteMany: ReturnType<typeof vi.fn> } }
-    ).pushToken.deleteMany.mock.calls[0]![0] as { where: { token: string } };
+    expect(
+      (prisma as { pushToken: { deleteMany: ReturnType<typeof vi.fn> } }).pushToken.deleteMany,
+    ).toHaveBeenCalledTimes(1);
+    const arg = (prisma as { pushToken: { deleteMany: ReturnType<typeof vi.fn> } }).pushToken
+      .deleteMany.mock.calls[0]![0] as { where: { token: string } };
     expect(arg.where.token).toBe('stale-1');
     expect(result.sent).toBe(0);
     expect(result.failed).toBe(1);
