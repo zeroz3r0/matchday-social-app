@@ -36,7 +36,6 @@ model User {
   latitude  Float?
   longitude Float?
   city      String?  @db.VarChar(100)
-  fcmToken  String?  @map("fcm_token")
   // Legal / soft-delete (legal-foundation)
   deletedAt              DateTime? @map("deleted_at")
   acceptedTosVersion     String    @default("v0") @map("accepted_tos_version") @db.VarChar(10)
@@ -58,9 +57,25 @@ model User {
   votesReceived    PlayerVote[]      @relation("VoteReceiver")
   passwordResetTokens PasswordResetToken[]
   exportRequests   DataExportRequest[]
+  pushTokens       PushToken[]
 
   @@index([deletedAt])
   @@map("users")
+}
+
+// ─── PUSH TOKENS (Expo Push) ────────────────────────────────────────────────
+
+model PushToken {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String   // 'ios' | 'android' | 'web' | 'unknown'
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  @@index([userId])
+  @@map("push_tokens")
 }
 
 // ─── PASSWORD RESET TOKENS ──────────────────────────────────────────────────

@@ -59,7 +59,7 @@ export async function anonymizeUser(userId: string, tx: TxClient): Promise<void>
       city: null,
       latitude: null,
       longitude: null,
-      fcmToken: null,
+      // PushToken rows cascade-delete via FK; no manual scrub here.
     },
   });
 

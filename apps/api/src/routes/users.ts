@@ -203,7 +203,6 @@ const updateProfileSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   city: z.string().max(100).optional(),
-  fcmToken: z.string().optional(),
 });
 
 userRoutes.patch('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {

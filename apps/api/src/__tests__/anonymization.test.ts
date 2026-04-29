@@ -2,8 +2,9 @@
 // Account Deletion Service — anonymizeUser (REQ-AD-7)
 //
 // Verifies:
-// - User row mutated in place (nickname, email, avatar, bio, city, lat, lng,
-//   fcmToken scrubbed)
+// - User row mutated in place (nickname, email, avatar, bio, city, lat, lng
+//   scrubbed). PushToken cleanup is FK-cascade — covered in pushNotifications
+//   integration; see Phase D.
 // - ClubMember rows for the user deleted (membership ends)
 // - Match.createdById / MatchStat.playerId / PlayerVote.* /
 //   Competition.createdById preserved (KEEP-anonymize, FK history kept)
@@ -95,7 +96,6 @@ describe('anonymizeUser', () => {
       city: 'Rosario',
       latitude: -34.6,
       longitude: -58.4,
-      fcmToken: 'fcm-x',
     });
 
     await anonymizeUser('user-bye', tx as any);
@@ -112,7 +112,9 @@ describe('anonymizeUser', () => {
     expect(updateCall.data.city).toBeNull();
     expect(updateCall.data.latitude).toBeNull();
     expect(updateCall.data.longitude).toBeNull();
-    expect(updateCall.data.fcmToken).toBeNull();
+    // fcmToken removed in push-notifications-real-impl; PushToken FK cascade
+    // handles cleanup at DB level.
+    expect(updateCall.data).not.toHaveProperty('fcmToken');
   });
 
   it('deletes ClubMember rows (membership ends — REQ-AD-7)', async () => {

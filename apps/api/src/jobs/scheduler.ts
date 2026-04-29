@@ -67,7 +67,7 @@ export function startScheduledJobs(): void {
             include: {
               players: {
                 where: { invitationStatus: 'ACCEPTED' },
-                include: { user: { select: { id: true, fcmToken: true } } },
+                include: { user: { select: { id: true } } },
               },
             },
           },
@@ -138,10 +138,13 @@ export function startScheduledJobs(): void {
             },
           });
 
-          // Notify all players
-          const tokens = [...homeTeam.players, ...awayTeam.players]
-            .map((p) => p.user.fcmToken)
-            .filter(Boolean) as string[];
+          // Notify all players (Phase D will swap to pushNotifications.sendToUsers).
+          const allPlayerIds = [...homeTeam.players, ...awayTeam.players].map((p) => p.userId);
+          const pushTokenRows = await prisma.pushToken.findMany({
+            where: { userId: { in: allPlayerIds } },
+            select: { token: true },
+          });
+          const tokens = pushTokenRows.map((r) => r.token);
 
           await sendMultiplePushNotifications(tokens, {
             title: '🏆 MVP anunciado!',

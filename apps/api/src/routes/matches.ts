@@ -110,17 +110,18 @@ matchRoutes.post('/', authenticate, async (req: Request, res: Response, next: Ne
       },
     });
 
-    // Send push notifications to invited players
+    // Send push notifications to invited players (Phase D will wire to
+    // pushNotifications.sendToUsers with PushToken table — Phase A keeps the
+    // legacy no-op call alive so behavior is identical until trigger refactor).
     const allPlayerIds = [...data.homeTeam.playerIds, ...data.awayTeam.playerIds].filter(
       (pid) => pid !== userId,
     );
 
-    const users = await prisma.user.findMany({
-      where: { id: { in: allPlayerIds }, fcmToken: { not: null } },
-      select: { fcmToken: true },
+    const pushTokenRows = await prisma.pushToken.findMany({
+      where: { userId: { in: allPlayerIds } },
+      select: { token: true },
     });
-
-    const tokens = users.map((u) => u.fcmToken).filter(Boolean) as string[];
+    const tokens = pushTokenRows.map((r) => r.token);
     await sendMultiplePushNotifications(tokens, {
       title: '⚽ Nueva convocatoria!',
       body: `Te han invitado a un partido ${data.gameType}`,
@@ -418,13 +419,17 @@ matchRoutes.post(
         }
       }
 
-      // Notify players voting window open
+      // Notify players voting window open (Phase D will swap to sendToUsers).
       const players = await prisma.matchPlayer.findMany({
         where: { matchTeam: { matchId } },
-        include: { user: { select: { fcmToken: true } } },
+        select: { userId: true },
       });
 
-      const tokens = players.map((p) => p.user.fcmToken).filter(Boolean) as string[];
+      const pushTokenRows = await prisma.pushToken.findMany({
+        where: { userId: { in: players.map((p) => p.userId) } },
+        select: { token: true },
+      });
+      const tokens = pushTokenRows.map((r) => r.token);
       await sendMultiplePushNotifications(tokens, {
         title: '🗳️ Vota a tu MVP!',
         body: `Partido finalizado ${homeScore}-${awayScore}. Tienes 12h para votar.`,
