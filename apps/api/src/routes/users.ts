@@ -235,6 +235,73 @@ userRoutes.patch('/me', authenticate, async (req: Request, res: Response, next: 
   }
 });
 
+// ─── POST /api/users/me/push-tokens (push-notifications-real-impl) ─────────
+//
+// Register an Expo push token for the authenticated user. Idempotent — same
+// token re-registered is a no-op upsert that bumps `lastUsedAt` and corrects
+// `platform` (e.g. backfilled rows start as 'unknown' until first real
+// register call).
+
+const pushTokenRegisterSchema = z.object({
+  token: z.string().min(1),
+  platform: z.enum(['ios', 'android', 'web']),
+});
+
+userRoutes.post(
+  '/me/push-tokens',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { token, platform } = pushTokenRegisterSchema.parse(req.body);
+      const userId = req.user!.userId;
+      const now = new Date();
+
+      const row = await prisma.pushToken.upsert({
+        where: { token },
+        create: { userId, token, platform, lastUsedAt: now },
+        update: { platform, lastUsedAt: now },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { tokenId: row.id },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ─── DELETE /api/users/me/push-tokens/:token ───────────────────────────────
+//
+// Idempotent — missing token returns 204 (no-op). Scoped to current user so
+// a stolen token can't be revoked from someone else's account.
+
+userRoutes.delete(
+  '/me/push-tokens/:token',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tokenParam = req.params['token'];
+      if (typeof tokenParam !== 'string' || tokenParam.length === 0) {
+        // Express decoded the path param; empty value is malformed but we
+        // still treat as no-op to keep the endpoint idempotent.
+        res.status(204).send();
+        return;
+      }
+      const userId = req.user!.userId;
+
+      await prisma.pushToken.deleteMany({
+        where: { userId, token: tokenParam },
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 // ─── POST /api/users/me/delete (REQ-AD-1, REQ-AD-2) ─────────────────────────
 //
 // Soft-delete: mark `deletedAt = now()`. The hard-delete cron runs after the
