@@ -2,10 +2,11 @@
 // Auth Context — Global auth state
 // ============================================================================
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getItem, setItem, deleteItem } from '../utils/storage';
 import { authApi, userApi } from '../services/api';
 import { setUser as sentrySetUser, captureException } from '../lib/sentry';
+import { getExpoPushToken } from '../lib/notifications';
 
 interface User {
   id: string;
@@ -41,9 +42,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Best-effort: register Expo Push token w/ backend. Silently skips if no
+// projectId env, simulator, denied permission, or any error (push is
+// non-critical UX — never block auth flow). Returns the token if registered
+// (so logout can later unregister it) or null otherwise.
+async function registerPushTokenForCurrentUser(): Promise<string | null> {
+  const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
+  if (!projectId) return null;
+
+  const result = await getExpoPushToken(projectId);
+  if (result.status !== 'ok') return null;
+
+  try {
+    await userApi.registerPushToken(result.token, result.platform);
+    return result.token;
+  } catch (err) {
+    captureException(err);
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Remember the registered Expo push token so logout can unregister it.
+  // useRef instead of useState — token churn must NOT trigger re-renders.
+  const pendingTokenRef = useRef<string | null>(null);
 
   // Check stored token on mount — with 5s timeout to avoid hanging
   useEffect(() => {
@@ -59,6 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const res = await userApi.getMe();
           setUser(res.data);
           sentrySetUser({ id: res.data.id, nickname: res.data.nickname });
+          // Re-register push token on session restore (token may have rotated
+          // since last launch). Best-effort — ignore failures.
+          pendingTokenRef.current = await registerPushTokenForCurrentUser();
         }
       } catch (err) {
         captureException(err);
@@ -89,6 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Happy path — commit auth state and let RootNavigator switch stacks.
       setUser(res.data.user);
       sentrySetUser({ id: res.data.user.id, nickname: res.data.user.nickname });
+      // Register Expo Push token on first commit (deferred-commit pattern:
+      // soft-deleted users don't register until they confirm restore).
+      pendingTokenRef.current = await registerPushTokenForCurrentUser();
     }
     // For soft-deleted accounts, the LoginScreen renders the restore banner
     // before we commit the user. This keeps the user on the auth stack until
@@ -114,11 +144,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setItem('auth_token', res.data.token);
       setUser(res.data.user);
       sentrySetUser({ id: res.data.user.id, nickname: res.data.user.nickname });
+      pendingTokenRef.current = await registerPushTokenForCurrentUser();
     },
     [],
   );
 
   const logout = useCallback(async () => {
+    // Unregister Expo Push token BEFORE clearing the auth_token — backend
+    // requires Authorization header on DELETE /me/push-tokens/:token. Best-
+    // effort: failure must NOT block logout (offline / network error).
+    if (pendingTokenRef.current) {
+      try {
+        await userApi.unregisterPushToken(pendingTokenRef.current);
+      } catch (err) {
+        captureException(err);
+      }
+      pendingTokenRef.current = null;
+    }
     try {
       await deleteItem('auth_token');
     } catch (err) {
@@ -143,6 +185,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await userApi.cancelDelete();
     setUser(pendingUser);
     sentrySetUser({ id: pendingUser.id, nickname: pendingUser.nickname });
+    // Now that the soft-deleted user is restored and committed, register
+    // push token (skipped during the deferred-commit phase).
+    pendingTokenRef.current = await registerPushTokenForCurrentUser();
   }, []);
 
   return (

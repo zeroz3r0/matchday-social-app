@@ -167,6 +167,17 @@ const realUserApi = {
     request<{ success: true; data: { exportId: string; message?: string } }>('/users/me/export', {
       method: 'POST',
     }),
+
+  registerPushToken: (token: string, platform: 'ios' | 'android' | 'web') =>
+    request<{ success: true; data: { tokenId: string } }>('/users/me/push-tokens', {
+      method: 'POST',
+      body: JSON.stringify({ token, platform }),
+    }),
+
+  unregisterPushToken: (token: string): Promise<void> =>
+    request<void>(`/users/me/push-tokens/${encodeURIComponent(token)}`, {
+      method: 'DELETE',
+    }),
 };
 
 const realLegalApi = {

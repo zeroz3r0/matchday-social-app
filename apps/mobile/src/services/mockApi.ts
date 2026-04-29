@@ -147,6 +147,16 @@ export const userApi = {
       },
     };
   },
+
+  // ─── Push tokens (mock — no-op success, simulated latency) ──────────────
+  registerPushToken: async (_token: string, _platform: 'ios' | 'android' | 'web') => {
+    await delay();
+    return { success: true as const, data: { tokenId: mockId('pushtok') } };
+  },
+
+  unregisterPushToken: async (_token: string): Promise<void> => {
+    await delay();
+  },
 };
 
 // ─── Legal docs (mock) ──────────────────────────────────────────────────────
