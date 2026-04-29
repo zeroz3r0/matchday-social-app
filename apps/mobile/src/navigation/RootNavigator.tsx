@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
+import React from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text } from 'react-native';
@@ -28,6 +28,10 @@ import { LegalScreen } from '../screens/LegalScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Module-level navigation ref — usable outside the React tree (e.g. push
+// notification tap handler in App.tsx routes deep links via this ref).
+export const navigationRef = createNavigationContainerRef<Record<string, object | undefined>>();
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -111,7 +115,6 @@ function MainTabs() {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
-  const navRef = useRef<NavigationContainerRef<Record<string, object | undefined>>>(null);
 
   if (isLoading) {
     return (
@@ -131,9 +134,9 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer
-      ref={navRef}
+      ref={navigationRef}
       onReady={() => {
-        navigationIntegration.registerNavigationContainer(navRef);
+        navigationIntegration.registerNavigationContainer(navigationRef);
       }}
     >
       <View style={{ flex: 1 }}>
