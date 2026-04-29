@@ -23,6 +23,8 @@ import { VotingScreen } from '../screens/VotingScreen';
 import { CompetitionListScreen } from '../screens/CompetitionListScreen';
 import { CompetitionDetailScreen } from '../screens/CompetitionDetailScreen';
 import { CompetitionCreateScreen } from '../screens/CompetitionCreateScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { LegalScreen } from '../screens/LegalScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,6 +34,16 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string } | undefined;
+  Legal: { doc: 'tos' | 'privacy' };
+};
+
+export type RootStackParamList = {
+  MainTabs: undefined;
+  MatchDetail: { id: string } | undefined;
+  CreateMatch: undefined;
+  Voting: { matchId: string } | undefined;
+  Settings: undefined;
+  Legal: { doc: 'tos' | 'privacy' };
 };
 
 export type CompetitionStackParamList = {
@@ -133,6 +145,12 @@ export function RootNavigator() {
               <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
               <Stack.Screen name="CreateMatch" component={CreateMatchScreen} />
               <Stack.Screen name="Voting" component={VotingScreen} />
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+              <Stack.Screen
+                name="Legal"
+                component={LegalScreen}
+                options={{ presentation: 'modal' }}
+              />
             </>
           ) : (
             <>
@@ -140,6 +158,11 @@ export function RootNavigator() {
               <Stack.Screen name="Register" component={RegisterScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen
+                name="Legal"
+                component={LegalScreen}
+                options={{ presentation: 'modal' }}
+              />
             </>
           )}
         </Stack.Navigator>

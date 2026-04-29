@@ -18,19 +18,36 @@ import { showAlert } from '../utils/alert';
 import { ApiError } from '../services/api';
 import { C, IMG } from '../utils/theme';
 
+interface PendingUserShape {
+  id: string;
+  email: string;
+  nickname: string;
+  avatarUrl: string | null;
+  position: string;
+  bio: string | null;
+  city: string | null;
+}
+
 export function LoginScreen({ navigation }: any) {
-  const { login } = useAuth();
+  const { login, logout, restoreAccount } = useAuth();
   const { isConnected } = useNetworkStatus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  // Pending state: backend reported `meta.deleted = true`. We hold the user
+  // shape until they pick Restaurar (commit) or Cerrar sesión (drop token).
+  const [pendingDeletedUser, setPendingDeletedUser] = useState<PendingUserShape | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) return showAlert('Error', 'Rellena todos los campos');
     setLoading(true);
     try {
-      await login(email, password);
+      const res = await login(email, password);
+      if (res.deleted && res.pendingUser) {
+        setPendingDeletedUser(res.pendingUser as PendingUserShape);
+      }
     } catch (err: unknown) {
       // Honest error mapping (replaces the lying `err.message || "Credenciales
       // incorrectas"` fallback that surfaced wrong copy on timeouts/server
@@ -63,6 +80,37 @@ export function LoginScreen({ navigation }: any) {
     }
   };
 
+  const handleRestore = async () => {
+    if (!pendingDeletedUser) return;
+    setRestoring(true);
+    try {
+      await restoreAccount(pendingDeletedUser as any);
+      showAlert('Cuenta restaurada', '¡Bienvenido de nuevo!');
+    } catch (err) {
+      captureException(err);
+      let msg = 'No pudimos restaurar tu cuenta. Intentá de nuevo.';
+      if (err instanceof ApiError) {
+        if (err.code === 'GRACE_PERIOD_EXPIRED' || err.code === 'WINDOW_EXPIRED') {
+          msg = 'Pasaron más de 30 días. La cuenta ya no se puede restaurar.';
+        } else {
+          msg = err.message || msg;
+        }
+      }
+      showAlert('Error', msg);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const handleAbandon = async () => {
+    setPendingDeletedUser(null);
+    try {
+      await logout();
+    } catch (err) {
+      captureException(err);
+    }
+  };
+
   return (
     <ImageBackground source={{ uri: IMG.stadium }} style={s.bg} resizeMode="cover">
       <View style={s.overlay}>
@@ -71,6 +119,33 @@ export function LoginScreen({ navigation }: any) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+            {pendingDeletedUser ? (
+              <View style={s.banner} accessibilityRole="alert">
+                <Ionicons name="warning-outline" size={20} color={C.gold} />
+                <Text style={s.bannerText}>
+                  Tu cuenta está pendiente de eliminación. ¿Restaurarla?
+                </Text>
+                <View style={s.bannerBtns}>
+                  <TouchableOpacity
+                    style={[s.bannerBtn, s.bannerBtnPrimary]}
+                    onPress={handleRestore}
+                    disabled={restoring}
+                  >
+                    <Text style={s.bannerBtnTextPrimary}>
+                      {restoring ? 'Restaurando...' : 'Restaurar'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.bannerBtn, s.bannerBtnGhost]}
+                    onPress={handleAbandon}
+                    disabled={restoring}
+                  >
+                    <Text style={s.bannerBtnTextGhost}>Cerrar sesión</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
             {/* Brand */}
             <View style={s.brand}>
               <Ionicons name="football" size={44} color={C.primary} />
@@ -243,4 +318,22 @@ const s = StyleSheet.create({
   features: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginTop: 36 },
   feat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   featText: { color: C.t2, fontSize: 12, fontWeight: '500' },
+
+  banner: {
+    backgroundColor: 'rgba(255,184,0,0.12)',
+    borderColor: 'rgba(255,184,0,0.4)',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  bannerText: { color: C.t1, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  bannerBtns: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  bannerBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  bannerBtnPrimary: { backgroundColor: C.primary },
+  bannerBtnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.borderLight },
+  bannerBtnTextPrimary: { color: C.bg, fontWeight: '700', fontSize: 13 },
+  bannerBtnTextGhost: { color: C.t2, fontWeight: '600', fontSize: 13 },
 });

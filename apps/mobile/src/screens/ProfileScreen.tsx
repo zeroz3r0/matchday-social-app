@@ -22,7 +22,11 @@ const POS_MAP: Record<string, { icon: string; label: string }> = {
   FORWARD: { icon: 'lightning-bolt', label: 'Delantero' },
 };
 
-export function ProfileScreen() {
+export function ProfileScreen({
+  navigation,
+}: {
+  navigation?: { navigate: (screen: string) => void };
+}) {
   const { logout } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +74,17 @@ export function ProfileScreen() {
     >
       <ImageBackground source={{ uri: IMG.grass }} style={s.heroBg} resizeMode="cover">
         <View style={s.heroOv}>
+          {navigation ? (
+            <TouchableOpacity
+              style={s.gearBtn}
+              onPress={() => navigation.navigate('Settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Configuración"
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="settings-outline" size={22} color={C.w} />
+            </TouchableOpacity>
+          ) : null}
           <View style={s.avatarRing}>
             <Text style={s.avatarLetter}>{(profile?.nickname || 'J')[0].toUpperCase()}</Text>
           </View>
@@ -219,6 +234,14 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 20,
+  },
+  gearBtn: {
+    position: 'absolute',
+    top: 50,
+    right: 18,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   avatarRing: {
     width: 80,

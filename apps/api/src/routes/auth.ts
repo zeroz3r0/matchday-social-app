@@ -10,6 +10,8 @@ import { prisma } from '../utils/prisma';
 import { generateToken } from '../utils/jwt';
 import { sendEmail } from '../services/email';
 import { createTokenForUser, consumeToken, TokenInvalidError } from '../services/passwordReset';
+import { LATEST_TOS_VERSION, LATEST_PRIVACY_VERSION } from '../services/legal';
+import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { Sentry } from '../lib/sentry';
 
@@ -31,6 +33,9 @@ const registerSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   city: z.string().max(100).optional(),
+  // Legal — ToS + Privacy version acceptance (REQ-TA-1).
+  acceptedTosVersion: z.string().min(1, 'Debes aceptar los Términos de Servicio'),
+  acceptedPrivacyVersion: z.string().min(1, 'Debes aceptar la Política de Privacidad'),
 });
 
 const loginSchema = z.object({
@@ -43,6 +48,30 @@ const loginSchema = z.object({
 authRoutes.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = registerSchema.parse(req.body);
+
+    // REQ-TA-2: ToS + Privacy version match. AppError.data.currentVersion lets
+    // mobile re-fetch the live doc and re-prompt without losing the rest of
+    // the form.
+    const currentTos = LATEST_TOS_VERSION();
+    if (data.acceptedTosVersion !== currentTos) {
+      throw new AppError(
+        400,
+        'TOS_VERSION_MISMATCH',
+        'La versión de Términos aceptada está desactualizada',
+        undefined,
+        { currentVersion: currentTos },
+      );
+    }
+    const currentPrivacy = LATEST_PRIVACY_VERSION();
+    if (data.acceptedPrivacyVersion !== currentPrivacy) {
+      throw new AppError(
+        400,
+        'PRIVACY_VERSION_MISMATCH',
+        'La versión de Privacidad aceptada está desactualizada',
+        undefined,
+        { currentVersion: currentPrivacy },
+      );
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -58,6 +87,9 @@ authRoutes.post('/register', async (req: Request, res: Response, next: NextFunct
         latitude: data.latitude,
         longitude: data.longitude,
         city: data.city,
+        acceptedTosVersion: data.acceptedTosVersion,
+        acceptedPrivacyVersion: data.acceptedPrivacyVersion,
+        acceptedAt: new Date(),
       },
       select: {
         id: true,
@@ -120,7 +152,28 @@ authRoutes.post('/login', async (req: Request, res: Response, next: NextFunction
       nickname: user.nickname,
     });
 
-    res.json({
+    // REQ-AD-4: soft-deleted users still get a valid login response, but the
+    // body carries `meta.deleted` so the mobile client can show the restore
+    // banner instead of the normal home screen.
+    type LoginMeta = { deleted: true; deletedAt: string };
+    type LoginResponseBody = {
+      success: true;
+      data: {
+        user: {
+          id: string;
+          email: string;
+          nickname: string;
+          position: string;
+          avatarUrl: string | null;
+          bio: string | null;
+          city: string | null;
+        };
+        token: string;
+      };
+      meta?: LoginMeta;
+    };
+
+    const responseBody: LoginResponseBody = {
       success: true,
       data: {
         user: {
@@ -134,7 +187,14 @@ authRoutes.post('/login', async (req: Request, res: Response, next: NextFunction
         },
         token,
       },
-    });
+    };
+    if (user.deletedAt) {
+      responseBody.meta = {
+        deleted: true,
+        deletedAt: user.deletedAt.toISOString(),
+      };
+    }
+    res.json(responseBody);
   } catch (error) {
     next(error);
   }

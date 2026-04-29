@@ -115,7 +115,7 @@ describe('GET /api/competitions/:id', () => {
   it('passes correct include shape to prisma (creator + clubs)', async () => {
     const c = {
       ...makeCompetition({ id: 'c3' }),
-      createdBy: { id: 'user-1', nickname: 'JuanP' },
+      createdBy: { id: 'user-1', nickname: 'JuanP', avatarUrl: null, deletedAt: null },
       clubs: [],
     };
     (prisma.competition.findUnique as any).mockResolvedValue(c);
@@ -124,7 +124,14 @@ describe('GET /api/competitions/:id', () => {
 
     const call = (prisma.competition.findUnique as any).mock.calls[0][0];
     expect(call.where).toEqual({ id: 'c3' });
-    expect(call.include.createdBy.select).toEqual({ id: true, nickname: true });
+    // legal-foundation: createdBy select now includes `avatarUrl` + `deletedAt`
+    // so userPublicProjection can anonymize soft-deleted creators (REQ-AD-5).
+    expect(call.include.createdBy.select).toEqual({
+      id: true,
+      nickname: true,
+      avatarUrl: true,
+      deletedAt: true,
+    });
     expect(call.include.clubs).toBeDefined();
   });
 });

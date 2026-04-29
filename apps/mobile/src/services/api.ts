@@ -126,6 +126,8 @@ const realAuthApi = {
     nickname: string;
     position: string;
     bio?: string;
+    acceptedTosVersion?: string;
+    acceptedPrivacyVersion?: string;
   }) =>
     request<{ success: true; data: { user: any; token: string } }>('/auth/register', {
       method: 'POST',
@@ -159,6 +161,19 @@ const realUserApi = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  deleteMe: (): Promise<void> => request<void>('/users/me/delete', { method: 'POST' }),
+  cancelDelete: (): Promise<void> => request<void>('/users/me/delete/cancel', { method: 'POST' }),
+  exportData: () =>
+    request<{ success: true; data: { exportId: string; message?: string } }>('/users/me/export', {
+      method: 'POST',
+    }),
+};
+
+const realLegalApi = {
+  getTos: () =>
+    request<{ success: true; data: { version: string; content: string } }>('/legal/tos'),
+  getPrivacy: () =>
+    request<{ success: true; data: { version: string; content: string } }>('/legal/privacy'),
 };
 
 const realMatchApi = {
@@ -282,3 +297,4 @@ export const competitionApi: typeof realCompetitionApi = USE_MOCK
 export const rankingApi: typeof realRankingApi = USE_MOCK
   ? (mock.rankingApi as any)
   : realRankingApi;
+export const legalApi: typeof realLegalApi = USE_MOCK ? (mock.legalApi as any) : realLegalApi;

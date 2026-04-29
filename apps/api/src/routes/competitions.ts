@@ -13,6 +13,7 @@ import { prisma } from '../utils/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { encodeCursor, decodeCursor } from '../utils/cursor';
+import { userPublicProjection } from '../utils/userPublicProjection';
 
 export const competitionRoutes = Router();
 
@@ -81,7 +82,7 @@ competitionRoutes.get('/:id', async (req: Request, res: Response, next: NextFunc
     const competition = await prisma.competition.findUnique({
       where: { id },
       include: {
-        createdBy: { select: { id: true, nickname: true } },
+        createdBy: { select: { id: true, nickname: true, avatarUrl: true, deletedAt: true } },
         clubs: {
           include: {
             club: { select: { id: true, name: true, badgeUrl: true } },
@@ -94,7 +95,18 @@ competitionRoutes.get('/:id', async (req: Request, res: Response, next: NextFunc
       throw new AppError(404, 'NOT_FOUND', 'Competicion no encontrada');
     }
 
-    res.json({ success: true, data: competition });
+    // REQ-AD-5: anonymize creator if soft-deleted. Reshape only `createdBy`;
+    // the rest of the payload (clubs, dates, etc.) is unchanged.
+    const creatorProjection = userPublicProjection(competition.createdBy);
+    const data = {
+      ...competition,
+      createdBy: {
+        id: creatorProjection.id,
+        nickname: creatorProjection.nickname,
+      },
+    };
+
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }

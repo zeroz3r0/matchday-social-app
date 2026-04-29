@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../context/NetworkStatusContext';
 import { captureException } from '../lib/sentry';
 import { showAlert } from '../utils/alert';
+import { ApiError, legalApi } from '../services/api';
 import { C } from '../utils/theme';
 
 const POSITIONS = [
@@ -24,17 +25,44 @@ export function RegisterScreen({ navigation }: any) {
     position: 'MIDFIELDER',
     bio: '',
   });
+  const [acceptedTos, setAcceptedTos] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const submitDisabled = loading || !isConnected || !acceptedTos || !acceptedPrivacy;
 
   const handleRegister = async () => {
     if (!form.email || !form.password || !form.nickname)
       return showAlert('Error', 'Rellena los campos obligatorios');
+    if (!acceptedTos || !acceptedPrivacy)
+      return showAlert(
+        'Error',
+        'Debés aceptar los Términos de Servicio y la Política de Privacidad.',
+      );
     setLoading(true);
     try {
-      await register(form);
-    } catch (err: any) {
+      // Fetch CURRENT versions just before submit (REQ-TA-1) so that we send
+      // exactly what the server expects. If server bumps version mid-flow we
+      // catch the TOS_VERSION_MISMATCH error below and reset the checkboxes.
+      const [tosRes, privacyRes] = await Promise.all([legalApi.getTos(), legalApi.getPrivacy()]);
+      await register({
+        ...form,
+        acceptedTosVersion: tosRes.data.version,
+        acceptedPrivacyVersion: privacyRes.data.version,
+      });
+    } catch (err: unknown) {
       captureException(err);
-      showAlert('Error', err.message);
+      if (err instanceof ApiError && err.code === 'TOS_VERSION_MISMATCH') {
+        setAcceptedTos(false);
+        setAcceptedPrivacy(false);
+        showAlert(
+          'Términos actualizados',
+          'Los términos cambiaron. Aceptalos de nuevo para continuar.',
+        );
+      } else {
+        const msg = err instanceof Error ? err.message : 'Error al registrarse';
+        showAlert('Error', msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -121,10 +149,26 @@ export function RegisterScreen({ navigation }: any) {
         />
       </View>
 
+      {/* ToS + Privacy acceptance — REQ-ML-1 */}
+      <CheckRow
+        checked={acceptedTos}
+        onToggle={() => setAcceptedTos(!acceptedTos)}
+        label="He leído y acepto los"
+        link="Términos de Servicio"
+        onPressLink={() => navigation.navigate('Legal', { doc: 'tos' })}
+      />
+      <CheckRow
+        checked={acceptedPrivacy}
+        onToggle={() => setAcceptedPrivacy(!acceptedPrivacy)}
+        label="He leído y acepto la"
+        link="Política de Privacidad"
+        onPressLink={() => navigation.navigate('Legal', { doc: 'privacy' })}
+      />
+
       <TouchableOpacity
-        style={[s.btn, (loading || !isConnected) && { opacity: 0.5 }]}
+        style={[s.btn, submitDisabled && { opacity: 0.5 }]}
         onPress={handleRegister}
-        disabled={loading || !isConnected}
+        disabled={submitDisabled}
       >
         <Text style={s.btnT}>{loading ? 'Creando...' : 'Registrarse'}</Text>
       </TouchableOpacity>
@@ -138,6 +182,37 @@ export function RegisterScreen({ navigation }: any) {
         </Text>
       </TouchableOpacity>
     </ScrollView>
+  );
+}
+
+interface CheckRowProps {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+  link: string;
+  onPressLink: () => void;
+}
+
+function CheckRow({ checked, onToggle, label, link, onPressLink }: CheckRowProps) {
+  return (
+    <View style={s.checkRow}>
+      <TouchableOpacity
+        onPress={onToggle}
+        style={[s.checkBox, checked && s.checkBoxOn]}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        accessibilityLabel={`${label} ${link}`}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        {checked ? <Ionicons name="checkmark" size={16} color={C.bg} /> : null}
+      </TouchableOpacity>
+      <Text style={s.checkText}>
+        {label}{' '}
+        <Text style={s.checkLink} onPress={onPressLink}>
+          {link}
+        </Text>
+      </Text>
+    </View>
   );
 }
 
@@ -175,12 +250,32 @@ const s = StyleSheet.create({
   posBtnOn: { backgroundColor: C.primary, borderColor: C.primary },
   posT: { color: C.t3, fontSize: 11, fontWeight: '600' },
   posTOn: { color: C.bg },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  checkBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: C.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.card,
+  },
+  checkBoxOn: { backgroundColor: C.primary, borderColor: C.primary },
+  checkText: { flex: 1, color: C.t1, fontSize: 13 },
+  checkLink: { color: C.primary, fontWeight: '600', textDecorationLine: 'underline' },
   btn: {
     backgroundColor: C.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 16,
   },
   btnT: { color: C.bg, fontSize: 15, fontWeight: '700' },
   offlineHint: {
