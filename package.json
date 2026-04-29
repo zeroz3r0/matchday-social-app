@@ -26,6 +26,13 @@
     "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/mobile/tsconfig.json",
     "clean": "rimraf apps/*/dist apps/*/node_modules packages/*/dist packages/*/node_modules node_modules"
   },
+  "overrides": {
+    "svix": "^1.92.2",
+    "xcode": {
+      "uuid": "^14"
+    },
+    "postcss@<8.5.10": "^8.5.10"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
