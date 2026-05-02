@@ -180,16 +180,16 @@ The `stripFrontmatter` helper MUST have ≥5 dedicated unit tests (with frontmat
 
 ## Implementation pointers
 
-| Layer        | Path                                                                                                              | Responsibility                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Parse        | `node_modules/marked@^18`                                                                                         | string → `marked.Tokens.Token[]` AST. Zero deps, zero advisories. Pinned `^18.0.3`.                  |
-| Transform    | `packages/shared/src/markdown/tokensToNodes.ts`                                                                   | Pure `Token[] → RenderNode[]`. Calls `stripFrontmatter` before lex. Dev-warn on unknown tokens.      |
-| Transform    | `packages/shared/src/markdown/stripFrontmatter.ts`                                                                | Regex-anchored leading frontmatter strip. CRLF-tolerant.                                             |
-| Types        | `packages/shared/src/markdown/types.ts`                                                                           | `RenderNode`, `InlineNode`, `ListItemNode` discriminated unions. `level: 1\|2\|3`, `ordered: false`. |
-| Barrel       | `packages/shared/src/markdown/index.ts` + `packages/shared/src/index.ts` (`export * from './markdown';`)          | Public API for consumers.                                                                            |
-| Tests        | `packages/shared/src/markdown/__tests__/{tokensToNodes,stripFrontmatter}.test.ts`                                 | Vitest. Floor: ≥14 + ≥5.                                                                             |
-| Presentation | `apps/mobile/src/components/MarkdownRenderer.tsx`                                                                 | Thin RN layer. Maps `RenderNode[]` → `<View>`/`<Text>` per `MarkdownStyleDict`. No memoization.      |
-| Consumer     | `apps/mobile/src/screens/LegalScreen.tsx`                                                                         | Owns `mdStyles: MarkdownStyleDict` (visual tokens). Hosts the only call to `<MarkdownRenderer />`.   |
+| Layer        | Path                                                                                                     | Responsibility                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Parse        | `node_modules/marked@^18`                                                                                | string → `marked.Tokens.Token[]` AST. Zero deps, zero advisories. Pinned `^18.0.3`.                  |
+| Transform    | `packages/shared/src/markdown/tokensToNodes.ts`                                                          | Pure `Token[] → RenderNode[]`. Calls `stripFrontmatter` before lex. Dev-warn on unknown tokens.      |
+| Transform    | `packages/shared/src/markdown/stripFrontmatter.ts`                                                       | Regex-anchored leading frontmatter strip. CRLF-tolerant.                                             |
+| Types        | `packages/shared/src/markdown/types.ts`                                                                  | `RenderNode`, `InlineNode`, `ListItemNode` discriminated unions. `level: 1\|2\|3`, `ordered: false`. |
+| Barrel       | `packages/shared/src/markdown/index.ts` + `packages/shared/src/index.ts` (`export * from './markdown';`) | Public API for consumers.                                                                            |
+| Tests        | `packages/shared/src/markdown/__tests__/{tokensToNodes,stripFrontmatter}.test.ts`                        | Vitest. Floor: ≥14 + ≥5.                                                                             |
+| Presentation | `apps/mobile/src/components/MarkdownRenderer.tsx`                                                        | Thin RN layer. Maps `RenderNode[]` → `<View>`/`<Text>` per `MarkdownStyleDict`. No memoization.      |
+| Consumer     | `apps/mobile/src/screens/LegalScreen.tsx`                                                                | Owns `mdStyles: MarkdownStyleDict` (visual tokens). Hosts the only call to `<MarkdownRenderer />`.   |
 
 ---
 
@@ -222,8 +222,8 @@ This spec MUST also NOT be amended to:
 
 ## Glossary
 
-| Term                 | Definition                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Term                 | Definition                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | renderer-spec node   | Abstract `RenderNode`/`InlineNode` emitted by `tokensToNodes`; maps 1:1 to a React Native component in the presentation layer |
 | graceful degradation | Rendering unknown / unsupported tokens as plain text rather than crashing or showing blank content                            |
 | frontmatter          | YAML metadata block at the start of a markdown file, delimited by `---` lines                                                 |

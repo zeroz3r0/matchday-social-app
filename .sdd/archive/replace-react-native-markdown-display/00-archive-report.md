@@ -23,16 +23,16 @@ Replaced `react-native-markdown-display` with `marked@^18` plus a custom three-l
 
 The 7 phase artifacts for this change have been MOVED via `git mv` from `.sdd/changes/replace-react-native-markdown-display/` to this archived folder (`.sdd/archive/replace-react-native-markdown-display/`). Git history preserves them as renames.
 
-| Phase            | File                       |
-| ---------------- | -------------------------- |
-| explore          | `10-explore.md`            |
-| proposal         | `20-proposal.md`           |
-| spec (delta)     | `30-spec.md`               |
-| design           | `40-design.md`             |
-| tasks            | `50-tasks.md`              |
-| apply-progress   | `60-apply-progress.md`     |
-| verify-report    | `70-verify-report.md`      |
-| archive-report   | `00-archive-report.md` (this) |
+| Phase          | File                          |
+| -------------- | ----------------------------- |
+| explore        | `10-explore.md`               |
+| proposal       | `20-proposal.md`              |
+| spec (delta)   | `30-spec.md`                  |
+| design         | `40-design.md`                |
+| tasks          | `50-tasks.md`                 |
+| apply-progress | `60-apply-progress.md`        |
+| verify-report  | `70-verify-report.md`         |
+| archive-report | `00-archive-report.md` (this) |
 
 The working folder under `.sdd/changes/` no longer exists — it has been moved here. Anyone reading this archive in the future starts at `00-archive-report.md` and follows the cross-refs.
 
@@ -57,25 +57,25 @@ Plus this archive commit (added by `sdd-archive`, SHA recorded after commit land
 
 ### Verify gate snapshot at HEAD `d7c78a3`
 
-| Gate                               | Result                                                |
-| ---------------------------------- | ----------------------------------------------------- |
-| `npm run shared:build`             | clean                                                 |
-| `npm run test:shared`              | 73/73 (53 baseline + 5 strip + 15 tokensToNodes)      |
-| `npm run test:api`                 | 130/130                                               |
-| `npm run typecheck`                | clean (3 workspaces)                                  |
-| `npm run lint`                     | 0 errors, 196 warnings (= cap, no regression)         |
-| `npm run format:check`             | clean                                                 |
-| `npm audit --audit-level=high`     | exit 0 (0 vulnerabilities)                            |
-| `npm audit --audit-level=moderate` | exit 0 (0 vulnerabilities, down from 2 baseline)      |
+| Gate                               | Result                                           |
+| ---------------------------------- | ------------------------------------------------ |
+| `npm run shared:build`             | clean                                            |
+| `npm run test:shared`              | 73/73 (53 baseline + 5 strip + 15 tokensToNodes) |
+| `npm run test:api`                 | 130/130                                          |
+| `npm run typecheck`                | clean (3 workspaces)                             |
+| `npm run lint`                     | 0 errors, 196 warnings (= cap, no regression)    |
+| `npm run format:check`             | clean                                            |
+| `npm audit --audit-level=high`     | exit 0 (0 vulnerabilities)                       |
+| `npm audit --audit-level=moderate` | exit 0 (0 vulnerabilities, down from 2 baseline) |
 
 ### Audit delta (root → root)
 
-| Severity | Pre-change (`354957b` master) | Post-change (HEAD `d7c78a3`) | Delta |
-| -------- | ----------------------------- | ---------------------------- | ----- |
-| critical | 0                             | 0                            | 0     |
-| high     | 0                             | 0                            | 0     |
-| moderate | **2** (markdown-it chain)     | **0**                        | **–2** |
-| low      | 0                             | 0                            | 0     |
+| Severity  | Pre-change (`354957b` master) | Post-change (HEAD `d7c78a3`) | Delta  |
+| --------- | ----------------------------- | ---------------------------- | ------ |
+| critical  | 0                             | 0                            | 0      |
+| high      | 0                             | 0                            | 0      |
+| moderate  | **2** (markdown-it chain)     | **0**                        | **–2** |
+| low       | 0                             | 0                            | 0      |
 | **total** | **2**                         | **0**                        | **–2** |
 
 The two cleared moderates were both `markdown-it < 12.3.2` advisories pulled in transitively by `react-native-markdown-display`. Removing the parent dep eliminated both.
@@ -84,9 +84,9 @@ The two cleared moderates were both `markdown-it < 12.3.2` advisories pulled in 
 
 A single new active-spec file was created (no existing capability spec to merge into):
 
-| Capability                | Action  | Active-spec file                                      |
-| ------------------------- | ------- | ----------------------------------------------------- |
-| `legal-markdown-rendering` | CREATED | `.sdd/active-specs/legal-markdown-rendering.md`       |
+| Capability                 | Action  | Active-spec file                                |
+| -------------------------- | ------- | ----------------------------------------------- |
+| `legal-markdown-rendering` | CREATED | `.sdd/active-specs/legal-markdown-rendering.md` |
 
 The new spec is scoped to **rendering invariants** (allowlist, frontmatter strip, graceful degradation, visual fidelity, no native modules, TDD floor). It locks in the rendering contract introduced by this change so future drive-by edits to `tokensToNodes`, `MarkdownRenderer`, or `LegalScreen` cannot silently expand or weaken what the legal screens render.
 
@@ -98,46 +98,46 @@ No existing active-specs (`auth.md`, `cron-scheduling.md`, `cicd.md`) were modif
 
 From `40-design.md` Decisions Log + §15 addendum:
 
-| #   | Decision                                                                                                                                |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | `marked@^18.0.3` — pinned. Sole markdown runtime dep. Zero transitives, zero advisories.                                                |
-| D2  | Pure transform lives in `packages/shared/src/markdown/` (Vitest). Mobile is presentation only.                                          |
-| D3  | `MarkdownStyleDict` keys mirror the consumer's existing style keys 1:1 — zero-friction migration.                                       |
-| D4  | Frontmatter stripped defensively in the transform layer (belt + suspenders against API contract drift).                                 |
-| D5  | Unknown markdown nodes degrade to plain text + dev-only `console.warn`. Production: silent.                                             |
-| D6  | Link tokens drop the URL and emit plain text. No `Linking.openURL` until a future SDD change re-adds it.                                |
-| D7  | `RenderNode` / `InlineNode` are discriminated unions with `level: 1\|2\|3` literal and `ordered: false` literal — TS catches drift.    |
-| D8  | No `useCallback` / `useMemo` / `forwardRef` in the new mobile components (project convention; React 19 + Compiler).                     |
-| D9  | Dev-warn guard uses `process.env['NODE_ENV'] !== 'production'` (portable across `packages/shared` and Metro).                           |
-| D10 | `mdStyles` stays in `LegalScreen.tsx` (consumer owns the visual tokens, not the renderer).                                              |
-| D11 | The package-level barrel export ships in its own commit (C6 `caa6395`) so revert can be selective.                                      |
+| #   | Decision                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | `marked@^18.0.3` — pinned. Sole markdown runtime dep. Zero transitives, zero advisories.                                              |
+| D2  | Pure transform lives in `packages/shared/src/markdown/` (Vitest). Mobile is presentation only.                                        |
+| D3  | `MarkdownStyleDict` keys mirror the consumer's existing style keys 1:1 — zero-friction migration.                                     |
+| D4  | Frontmatter stripped defensively in the transform layer (belt + suspenders against API contract drift).                               |
+| D5  | Unknown markdown nodes degrade to plain text + dev-only `console.warn`. Production: silent.                                           |
+| D6  | Link tokens drop the URL and emit plain text. No `Linking.openURL` until a future SDD change re-adds it.                              |
+| D7  | `RenderNode` / `InlineNode` are discriminated unions with `level: 1\|2\|3` literal and `ordered: false` literal — TS catches drift.   |
+| D8  | No `useCallback` / `useMemo` / `forwardRef` in the new mobile components (project convention; React 19 + Compiler).                   |
+| D9  | Dev-warn guard uses `process.env['NODE_ENV'] !== 'production'` (portable across `packages/shared` and Metro).                         |
+| D10 | `mdStyles` stays in `LegalScreen.tsx` (consumer owns the visual tokens, not the renderer).                                            |
+| D11 | The package-level barrel export ships in its own commit (C6 `caa6395`) so revert can be selective.                                    |
 | §15 | `MarkdownStyleDict` does NOT expose `em`, `ordered_list`, or (per apply D3) `link` — TS excess-property check enforces the allowlist. |
-| §15 | `heading3` is retained even though current legal docs do not use it (defensive, allowed by allowlist).                                  |
+| §15 | `heading3` is retained even though current legal docs do not use it (defensive, allowed by allowlist).                                |
 
 ## Risks resolution
 
 ### From `40-design.md` §13
 
-| ID | Risk                                                  | Resolution                                                                                                  |
-| -- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| R1 | Style token drift                                     | RESOLVED — `MarkdownStyleDict` enforces 11 keys at compile time; `LegalScreen.tsx` typed accordingly.       |
-| R2 | `marked` AST coupling                                 | RESOLVED — single adapter file `tokensToNodes.ts`; pinned `^18.0.3`.                                        |
-| R3 | Frontmatter not stripped                              | RESOLVED — defensive strip in `parseMarkdown` + 5 unit tests for `stripFrontmatter`.                        |
-| R4 | Bundle size regression (~80 KB minified)              | RESOLVED — accepted in explore Q7. No deferred action.                                                      |
-| R5 | Inline emoji rendering (`⚠️`)                          | RESOLVED in tests (test 15 round-trips verbatim); DEFERRED-TO-MANUAL on device (V.2.c smoke).               |
-| R6 | Lint cap (196 warnings)                               | RESOLVED — lint at exactly 196 warnings, no regression. Verified at every lint-gated commit and at HEAD.    |
-| R7 | Metro cache holds stale resolution of removed dep      | DEFERRED-TO-MANUAL — PR body should call out `npx expo start -c` for reviewers running locally.             |
-| R8 | Future scope creep (someone adds tables ad-hoc)       | RESOLVED — spec allowlist explicit; expansion = new SDD change. Enforced by `MarkdownStyleDict` excess check. |
+| ID  | Risk                                              | Resolution                                                                                                    |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| R1  | Style token drift                                 | RESOLVED — `MarkdownStyleDict` enforces 11 keys at compile time; `LegalScreen.tsx` typed accordingly.         |
+| R2  | `marked` AST coupling                             | RESOLVED — single adapter file `tokensToNodes.ts`; pinned `^18.0.3`.                                          |
+| R3  | Frontmatter not stripped                          | RESOLVED — defensive strip in `parseMarkdown` + 5 unit tests for `stripFrontmatter`.                          |
+| R4  | Bundle size regression (~80 KB minified)          | RESOLVED — accepted in explore Q7. No deferred action.                                                        |
+| R5  | Inline emoji rendering (`⚠️`)                     | RESOLVED in tests (test 15 round-trips verbatim); DEFERRED-TO-MANUAL on device (V.2.c smoke).                 |
+| R6  | Lint cap (196 warnings)                           | RESOLVED — lint at exactly 196 warnings, no regression. Verified at every lint-gated commit and at HEAD.      |
+| R7  | Metro cache holds stale resolution of removed dep | DEFERRED-TO-MANUAL — PR body should call out `npx expo start -c` for reviewers running locally.               |
+| R8  | Future scope creep (someone adds tables ad-hoc)   | RESOLVED — spec allowlist explicit; expansion = new SDD change. Enforced by `MarkdownStyleDict` excess check. |
 
 ### From `60-apply-progress.md` `risks_for_verify`
 
-| Risk                                                                       | Resolution                                                                                                            |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Test 13 substring assertion brittleness (`expect(warnedWith).toContain`)   | RESOLVED — substring match is robust against future warn-message tweaks; passes.                                      |
-| Test 4.16 non-ASCII byte-faithful in tests                                 | RESOLVED in tests; DEFERRED-TO-MANUAL on device (V.2.c).                                                              |
-| Block sibling layout under `<View>` (not nested in `<Text style={body}>`)  | DEFERRED-TO-MANUAL — visual parity needs eye check on iOS sim, Android emulator, or web fallback (V.2 / V.3).         |
-| `link` style key removal could break a future snapshot                     | ACCEPTED — no mobile snapshots/tests today (mobile has no test runner); no current impact.                            |
-| Lint cap drift                                                             | RESOLVED — re-run at HEAD confirms exactly 196 warnings.                                                              |
+| Risk                                                                      | Resolution                                                                                                    |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Test 13 substring assertion brittleness (`expect(warnedWith).toContain`)  | RESOLVED — substring match is robust against future warn-message tweaks; passes.                              |
+| Test 4.16 non-ASCII byte-faithful in tests                                | RESOLVED in tests; DEFERRED-TO-MANUAL on device (V.2.c).                                                      |
+| Block sibling layout under `<View>` (not nested in `<Text style={body}>`) | DEFERRED-TO-MANUAL — visual parity needs eye check on iOS sim, Android emulator, or web fallback (V.2 / V.3). |
+| `link` style key removal could break a future snapshot                    | ACCEPTED — no mobile snapshots/tests today (mobile has no test runner); no current impact.                    |
+| Lint cap drift                                                            | RESOLVED — re-run at HEAD confirms exactly 196 warnings.                                                      |
 
 The deferred-to-manual items (R5 visual emoji, R7 Metro cache, V.1–V.4 manual smoke) are the irreducible portion that requires real devices. They fall to the PR reviewer.
 
