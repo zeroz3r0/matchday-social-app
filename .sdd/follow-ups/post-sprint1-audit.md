@@ -2,8 +2,8 @@
 
 > **topic_key**: `matchday-social-app/follow-ups/post-sprint1-audit`
 > **type**: `discovery`
-> **status**: `active` (open items, not yet triaged)
-> **last synced**: 2026-04-29 from `354957b` (PR #12)
+> **status**: 3 of 4 closed; remaining 1 deferred
+> **last synced**: 2026-05-02 from archive of `replace-react-native-markdown-display`
 
 **Source change**: `post-sprint1-audit-hardening` (PR #12, merge commit `354957b`)
 **Identified by**: verify phase (`.sdd/archive/post-sprint1-audit-hardening/70-verify-report.md`)
@@ -30,6 +30,7 @@
 - **What**: After Expo SDK 56 lands, most accepted-risk moderate advisories in Expo internals are expected to clear. Once `npm audit` returns 0 moderates as well as 0 highs at root, tighten `.github/workflows/ci.yml` audit step from `--audit-level=high` to `--audit-level=moderate`. This requires an SDD proposal because the audit gate spec (`.sdd/active-specs/cicd.md`) explicitly says "Moderate-and-below do not block" — that scenario must be revised.
 - **Severity**: SUGGESTION (nice-to-have)
 - **Effort**: medium — Expo bump can be invasive
+- **Update (2026-05-02)**: Audit-gate tightening to `moderate` is now READY — the `replace-react-native-markdown-display` change cleared the last 2 moderates from the root tree (2 → 0). Issue #16 can be SPLIT: tightening the gate is a small standalone change (no SDK bump required) and should be done first; the Expo SDK 56 bump becomes its own separate effort once SDK 56 stabilizes.
 
 ## 4. `feat(mobile): replace react-native-markdown-display to clear markdown-it ReDoS`
 
@@ -37,6 +38,7 @@
 - **What**: One of the 2 remaining accepted-risk moderates at HEAD `354957b` is the markdown-it ReDoS pulled in by `react-native-markdown-display`. Replace with an actively maintained alternative (e.g., a different markdown renderer entirely) to clear the advisory.
 - **Severity**: SUGGESTION (nice-to-have, not exploitable in current trusted-content path)
 - **Effort**: medium — UI library swap, regression-test markdown rendering on mobile
+- **Status**: ✅ **CLOSED** by PR #TBD-orchestrator-fill (2026-05-02). Escalated to issue #17 then resolved via dedicated SDD change `replace-react-native-markdown-display` (see `.sdd/archive/replace-react-native-markdown-display/00-archive-report.md`). Result: 2 root moderates → 0; new capability spec at `.sdd/active-specs/legal-markdown-rendering.md`.
 
 ---
 
