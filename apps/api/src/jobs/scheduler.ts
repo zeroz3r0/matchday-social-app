@@ -81,10 +81,11 @@ export function startScheduledJobs(): void {
   // ─── Legal cron jobs (hard-delete + export sweep) ───────────────────
   // Test mode skips the registration entirely so vitest never accidentally
   // schedules cron callbacks against a live timer.
+  // Note: node-cron@4 auto-starts on cron.schedule() — no explicit .start()
+  // is needed here. Returned ScheduledTask handles are kept so callers can
+  // .stop() them on graceful shutdown if ever wired up.
   if (process.env['NODE_ENV'] !== 'test') {
-    const legalJobs = registerLegalCronJobs();
-    legalJobs.hardDelete.start();
-    legalJobs.exportSweep.start();
+    registerLegalCronJobs();
     console.log(
       '[CRON] Legal cron jobs registered (hard-delete daily 03:00 UTC + export sweep hourly)',
     );

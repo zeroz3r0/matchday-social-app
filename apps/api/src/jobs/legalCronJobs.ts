@@ -88,8 +88,12 @@ export async function runExportSweepTick(): Promise<void> {
 // ─── Cron registration helpers ──────────────────────────────────────────────
 //
 // These return ScheduledTask handles so callers (scheduler.ts) can stop them
-// in tests or graceful shutdown. node-cron@4 tasks do not auto-start, so the
-// caller is responsible for invoking `.start()` explicitly (see scheduler.ts).
+// in tests or graceful shutdown. node-cron@4 auto-starts tasks on
+// `cron.schedule()` (verified in node_modules/node-cron/dist/cjs/node-cron.js
+// — `Runner` constructor calls `start()` unless `noOverlap`/`scheduled:false`
+// were set, both removed in v4). Calling `.start()` again is a safe no-op
+// guarded by `runner.isStopped()`, but redundant — see scheduler.ts where the
+// previous explicit `.start()` calls were dropped.
 
 export function registerLegalCronJobs(): { hardDelete: ScheduledTask; exportSweep: ScheduledTask } {
   const hardDelete = cron.schedule('0 3 * * *', async () => {
