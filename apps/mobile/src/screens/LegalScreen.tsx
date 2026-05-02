@@ -15,7 +15,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Markdown from 'react-native-markdown-display';
+import { MarkdownRenderer, type MarkdownStyleDict } from '../components/MarkdownRenderer';
 import { legalApi } from '../services/api';
 import { ErrorView } from '../components/ErrorView';
 import { captureException } from '../lib/sentry';
@@ -104,7 +104,7 @@ export function LegalScreen({ navigation, route }: Props) {
         />
       ) : (
         <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent}>
-          <Markdown style={mdStyles}>{content ?? ''}</Markdown>
+          <MarkdownRenderer source={content ?? ''} styles={mdStyles} />
         </ScrollView>
       )}
     </View>
@@ -132,7 +132,10 @@ const s = StyleSheet.create({
 });
 
 // Markdown style overrides — match dark theme.
-const mdStyles = {
+// `em` and `ordered_list` keys removed: italic and ordered lists are out of the
+// renderer allowlist (per change `replace-react-native-markdown-display`, design §15 addendum).
+// `link` key currently inert — renderer emits link as plain text. Reserved for future Linking change.
+const mdStyles: MarkdownStyleDict = {
   body: { color: C.t1, fontSize: 14, lineHeight: 22 },
   heading1: {
     color: C.w,
@@ -156,11 +159,8 @@ const mdStyles = {
     marginBottom: 6,
   },
   paragraph: { color: C.t1, marginVertical: 6 },
-  link: { color: C.primary },
   strong: { color: C.w, fontWeight: '700' as const },
-  em: { color: C.t1, fontStyle: 'italic' as const },
   bullet_list: { marginVertical: 4 },
-  ordered_list: { marginVertical: 4 },
   list_item: { color: C.t1 },
   blockquote: {
     backgroundColor: C.surface,
