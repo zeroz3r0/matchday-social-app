@@ -63,8 +63,8 @@ function inlineTokensToNodes(tokens: Token[] | undefined): InlineNode[] {
       default: {
         // em, image, html, del, etc. — all unknown inline
         warnUnknown(tok.type);
-        const raw = (tok as { raw?: string; text?: string }).raw ??
-          (tok as { text?: string }).text ?? '';
+        const raw =
+          (tok as { raw?: string; text?: string }).raw ?? (tok as { text?: string }).text ?? '';
         out.push({ type: 'text', value: raw });
       }
     }

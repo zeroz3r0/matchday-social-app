@@ -45,7 +45,9 @@ describe('tokensToNodes — block features', () => {
   it('5. transforms `**bold**` to a nested strong inline with text child', () => {
     const nodes = tokensToNodes(lex('Hello **world** today'));
     const inlines = inlinesOf(nodes[0]!);
-    const strong = inlines.find((n): n is Extract<InlineNode, { type: 'strong' }> => n.type === 'strong');
+    const strong = inlines.find(
+      (n): n is Extract<InlineNode, { type: 'strong' }> => n.type === 'strong',
+    );
     expect(strong).toBeDefined();
     expect(strong!.children).toEqual([{ type: 'text', value: 'world' }]);
   });
@@ -62,7 +64,9 @@ describe('tokensToNodes — block features', () => {
   it('7. transforms `` `inline code` `` to a codespan inline', () => {
     const nodes = tokensToNodes(lex('Use `npm test` daily'));
     const inlines = inlinesOf(nodes[0]!);
-    const code = inlines.find((n): n is Extract<InlineNode, { type: 'codespan' }> => n.type === 'codespan');
+    const code = inlines.find(
+      (n): n is Extract<InlineNode, { type: 'codespan' }> => n.type === 'codespan',
+    );
     expect(code).toBeDefined();
     expect(code!.value).toBe('npm test');
   });
