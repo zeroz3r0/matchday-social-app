@@ -3,7 +3,7 @@
 > **topic_key**: `spec/legal-markdown-rendering`
 > **type**: `architecture`
 > **status**: `active`
-> **last synced**: 2026-05-02 from `pending merge of feat/replace-react-native-markdown-display`
+> **last synced**: 2026-05-02 from PR #19 (pending merge — update to merge SHA after merge)
 
 ## Purpose
 
@@ -233,4 +233,4 @@ This spec MUST also NOT be amended to:
 
 ## Change history
 
-- `pending merge of feat/replace-react-native-markdown-display` (PR #TBD-orchestrator-fill, expected 2026-05-02) — initial creation. Captures the rendering contract introduced when replacing `react-native-markdown-display` with `marked@^18` + a custom RN renderer to clear the last 2 `markdown-it` ReDoS moderates from `npm audit`. Sources: change `replace-react-native-markdown-display` archive at `.sdd/archive/replace-react-native-markdown-display/`.
+- PR #19 (opened 2026-05-02, pending merge — update to merge SHA after merge) — initial creation. Captures the rendering contract introduced when replacing `react-native-markdown-display` with `marked@^18` + a custom RN renderer to clear the last 2 `markdown-it` ReDoS moderates from `npm audit`. Sources: change `replace-react-native-markdown-display` archive at `.sdd/archive/replace-react-native-markdown-display/`.

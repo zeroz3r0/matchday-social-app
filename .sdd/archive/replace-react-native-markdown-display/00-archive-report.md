@@ -9,7 +9,7 @@
 **Mode**: `.sdd/`-only (no engram dependency for this archive)
 **Status**: archived
 **Branch**: `feat/replace-react-native-markdown-display` — branch HEAD at archive: `d7c78a3` (verify report) → archive commit lands on top
-**PR**: #TBD-orchestrator-fill (orchestrator opens after archive commit pushes)
+**PR**: #19 (opened 2026-05-02 against `master`)
 **Source issue**: #17 (closed by PR merge)
 **Unblocks**: issue #16 (CI audit-gate tightening from `high` to `moderate`)
 
@@ -90,7 +90,7 @@ A single new active-spec file was created (no existing capability spec to merge 
 
 The new spec is scoped to **rendering invariants** (allowlist, frontmatter strip, graceful degradation, visual fidelity, no native modules, TDD floor). It locks in the rendering contract introduced by this change so future drive-by edits to `tokensToNodes`, `MarkdownRenderer`, or `LegalScreen` cannot silently expand or weaken what the legal screens render.
 
-The spec's `last synced` line currently reads `pending merge of feat/replace-react-native-markdown-display` and the `Change history` section references `PR #TBD-orchestrator-fill`. The orchestrator updates both placeholders to the actual merge SHA + PR number after the PR merges.
+The spec's `last synced` line and the `Change history` section reference PR #19. After the PR merges, anyone can update both lines to the actual merge SHA in a follow-up `chore(sdd):` commit.
 
 No existing active-specs (`auth.md`, `cron-scheduling.md`, `cicd.md`) were modified — this change is purely additive at the active-spec layer.
 
