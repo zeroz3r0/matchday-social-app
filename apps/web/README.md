@@ -2,7 +2,7 @@
 
 Next.js 15 (App Router, RSC) web app for Matchday — Spanish-first sports social network for amateur football.
 
-> **Status**: Phase 1 bootstrap (workspace skeleton + 5 shadcn components + Vitest). Real pages, BFF auth, and production deploy land in Phases 3 and 4 of the `web-bootstrap` change.
+> **Status**: Phases 1, 3, and 4 of `web-bootstrap` are implemented (workspace + BFF auth + public pages: `/`, `/login`, `/registro`, `/competiciones`, `/competiciones/[id]`, `/dashboard`). Phase 2 (production deploy to Fly.io + Vercel + DNS cutover) is gated on user pre-flights and runs after this batch.
 
 ## Stack
 
