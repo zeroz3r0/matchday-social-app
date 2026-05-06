@@ -61,3 +61,10 @@ npm-debug.log*
 
 # Engram persistent memory (local DB + session state)
 .engram/
+
+# Next.js web app outputs
+apps/web/.next/
+apps/web/.vercel/
+apps/web/coverage/
+apps/web/node_modules/
+apps/web/next-env.d.ts
