@@ -17,5 +17,13 @@
     "@typescript-eslint/no-explicit-any": "warn",
     "prettier/prettier": "error"
   },
-  "ignorePatterns": ["dist", "node_modules", ".expo", "*.config.js"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    ".expo",
+    "*.config.js",
+    "apps/web/.next",
+    "apps/web/next-env.d.ts",
+    "apps/web/coverage"
+  ]
 }
