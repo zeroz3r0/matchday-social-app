@@ -54,14 +54,15 @@ describe('<CompetitionCard>', () => {
   it('renders city + Spanish type label "Liga" + gameType for a LEAGUE', () => {
     render(<CompetitionCard competition={sampleLeague} />);
     expect(screen.getByText('Madrid')).toBeInTheDocument();
-    expect(screen.getByText(/Liga/)).toBeInTheDocument();
-    expect(screen.getByText(/F7/)).toBeInTheDocument();
+    // Exact-match "Liga" to distinguish from heading "Liga del Barrio…".
+    expect(screen.getByText('Liga', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('F7')).toBeInTheDocument();
   });
 
   it('renders Spanish type label "Torneo" + correct gameType for a TOURNAMENT', () => {
     render(<CompetitionCard competition={sampleTournament} />);
-    expect(screen.getByText(/Torneo/)).toBeInTheDocument();
-    expect(screen.getByText(/F11/)).toBeInTheDocument();
+    expect(screen.getByText('Torneo', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('F11')).toBeInTheDocument();
     expect(screen.getByText('Sevilla')).toBeInTheDocument();
   });
 
