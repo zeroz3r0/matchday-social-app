@@ -68,14 +68,12 @@ describe('<LoginForm>', () => {
   });
 
   it('on 401, shows the Spanish error from the response body', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ error: 'Email o contraseña incorrectos.' }), {
-          status: 401,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Email o contraseña incorrectos.' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     render(<LoginForm />);

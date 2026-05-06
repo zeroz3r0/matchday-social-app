@@ -59,14 +59,12 @@ describe('<RegisterForm>', () => {
   });
 
   it('on successful submit, navigates to /dashboard', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ user: { id: 'usr_1', email: 'nuevo@matchday.app' } }), {
-          status: 201,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ user: { id: 'usr_1', email: 'nuevo@matchday.app' } }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     render(<RegisterForm {...VERSIONS} />);
@@ -86,14 +84,12 @@ describe('<RegisterForm>', () => {
   });
 
   it('on 409 EMAIL_TAKEN, surfaces the Spanish error', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ error: 'Este correo ya está registrado.' }), {
-          status: 409,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Este correo ya está registrado.' }), {
+        status: 409,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     render(<RegisterForm {...VERSIONS} />);
