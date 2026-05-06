@@ -1,0 +1,21 @@
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# Coverage
+coverage/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

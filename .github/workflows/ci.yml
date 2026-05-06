@@ -72,3 +72,51 @@ jobs:
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run shared:build
       - run: npm run api:build
+
+  # ─── apps/web lanes (Phase 1 of web-bootstrap) ──────────────────────────
+  # All three run in parallel with the lanes above. Each one independently
+  # installs deps + generates Prisma client + builds shared, because GitHub
+  # Actions jobs do not share a filesystem by default.
+
+  web-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+      - run: npm run shared:build
+      - run: npm run test -w @matchday/web
+
+  web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+      - run: npm run shared:build
+      - run: npm run build -w @matchday/web
+
+  web-lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+      - run: npm run shared:build
+      - run: npm run lint -w @matchday/web
+      - run: tsc --noEmit -p apps/web/tsconfig.json
