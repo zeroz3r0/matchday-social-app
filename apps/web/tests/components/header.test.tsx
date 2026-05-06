@@ -23,6 +23,11 @@ vi.mock('@/lib/auth', () => ({
   getSession: vi.fn(),
 }));
 
+// LogoutButton uses useRouter — stub it so RTL render doesn't crash.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
+
 import { getSession } from '@/lib/auth';
 import { Header } from '@/components/header';
 
