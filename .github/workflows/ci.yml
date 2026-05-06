@@ -18,10 +18,13 @@ jobs:
 
       - run: npm ci
 
-      # Security audit gate — fail the build on any high or critical vuln.
-      # Moderate-and-below are tracked in the PR-body audit table, not blocked here.
-      - name: Security audit (high+)
-        run: npm audit --audit-level=high
+      # Security audit gate — fail the build on any moderate, high, or critical vuln.
+      # Tightened from --audit-level=high to --audit-level=moderate after PR #19
+      # cleared the last 2 moderates (markdown-it ReDoS via react-native-markdown-display).
+      # Low-severity advisories remain tracked in the PR-body audit table, not blocked.
+      # See SECURITY.md and .sdd/active-specs/cicd.md for the policy.
+      - name: Security audit (moderate+)
+        run: npm audit --audit-level=moderate
 
       # Generate Prisma client (required by API tests)
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
