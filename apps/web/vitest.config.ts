@@ -25,6 +25,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // `server-only` is a no-op marker that throws when bundled into a client
+      // component. Vitest is neither a server nor a client component context,
+      // so we alias it to an empty module to allow imports through. The
+      // production guarantee comes from Next's bundler at build time, not
+      // from this test runtime.
+      'server-only': path.resolve(__dirname, './tests/server-only-shim.ts'),
     },
   },
 });

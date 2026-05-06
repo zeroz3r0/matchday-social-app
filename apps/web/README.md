@@ -126,7 +126,72 @@ apps/web/
 
 ## Phase roadmap (engram observation #34)
 
-1. ✅ **Phase 1**: workspace bootstrap + CI lanes (this PR).
-2. ⏳ **Phase 2**: API production deploy on Fly + Neon (no web work).
-3. ⏳ **Phase 3**: BFF auth route handlers (`/api/auth/{login,register,logout,me}`) + `lib/auth.ts`.
+1. ✅ **Phase 1**: workspace bootstrap + CI lanes.
+2. ⏳ **Phase 2**: API production deploy on Fly + Neon (gated on user pre-flights — Neon, Fly, DNS).
+3. ✅ **Phase 3**: BFF auth route handlers + lib helpers + middleware (this PR — implemented OUT OF ORDER against `http://localhost:3000` per orchestrator decision; production switch is just `API_BASE_URL`).
 4. ⏳ **Phase 4**: public pages (`/`, `/login`, `/registro`, `/competiciones`, `/competiciones/[id]`) + Vercel deploy + DNS cutover.
+
+## Phase 3 — BFF auth (live in this branch)
+
+The web app NEVER holds the API JWT in JavaScript. All auth flows go through Next route handlers that exchange credentials with the API server-side and set an `HttpOnly; Secure; SameSite=Lax` cookie scoped to the web origin.
+
+### Endpoints
+
+| Method | Path                  | Purpose                                                        |
+| ------ | --------------------- | -------------------------------------------------------------- |
+| POST   | `/api/auth/login`     | Validate Zod → forward to API → set `matchday_session` cookie  |
+| POST   | `/api/auth/register`  | Same as login + accepts ToS / Privacy versions                 |
+| POST   | `/api/auth/logout`    | Clear cookie (`Max-Age=0`); NO upstream call (API has no /logout) |
+| GET    | `/api/auth/me`        | Read cookie → proxy to `/api/users/me` with Bearer JWT         |
+
+### Cookie shape (REQ-WB-2)
+
+```
+matchday_session=<jwt>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800
+```
+
+The cookie value is the **raw API JWT verbatim** — we never re-sign or transform it. The API verifies on every server-to-server call. The web's `getSession()` only DECODES the JWT payload (no verification) for redirect hints (`userId`, `exp`).
+
+### Library helpers
+
+- `lib/schemas/auth.ts` — Zod `loginSchema` + `registerSchema` (mirrors `apps/api/src/routes/auth.ts:22-44` inline; follow-up `shared-auth-schemas` change extracts to `@matchday/shared`).
+- `lib/auth.ts` — `getSession()`, `requireSession()`, `setSessionCookie()`, `clearSessionCookie()`, `UnauthorizedError`. Server-only (uses `next/headers`).
+- `lib/api-client.ts` — `apiFetch<T>(path, { auth })` with typed errors `ApiNetworkError | ApiUnauthorizedError | ApiValidationError`. Pure w.r.t. cookies (does not mutate them — caller decides). Has `import 'server-only'` guard.
+- `lib/errors.ts` — `getSpanishErrorMessage(code)` — maps API error codes / HTTP status to Spanish copy. Pure function.
+
+### Middleware (REQ-WB-10)
+
+`apps/web/middleware.ts` redirects to `/login?redirect=<encoded-original-path>` when no session cookie is present, for these matcher patterns:
+
+- `/dashboard/:path*`
+- `/mi-perfil/:path*`
+- `/competiciones/crear`
+
+These pages don't exist yet — the middleware is ready so future PRs only need to land the page files.
+
+### Local dev workflow
+
+```bash
+# Terminal 1 — API
+cd apps/api
+npm run dev          # listens on http://localhost:3000
+
+# Terminal 2 — Web
+npm run web:dev      # listens on http://localhost:3001
+```
+
+The web's `.env.local` should have `API_BASE_URL=http://localhost:3000` (matches `.env.example` default).
+
+### Production switch
+
+When Phase 2 lands, the only change is the env var in Vercel:
+
+```
+API_BASE_URL=https://api.matchday.app
+```
+
+Nothing in the route handler or library code references the production URL directly. `apiFetch` reads `process.env.API_BASE_URL` and trims trailing slashes defensively.
+
+### Why no JWT verification in web?
+
+The API verifies the JWT on every server-to-server call (the same way it verifies for mobile's Bearer-only flow). Re-verifying on the web side would mean either re-implementing JWT crypto in the web (drift risk) or shipping `JWT_SECRET` to Vercel (broader blast radius). Decoding the payload (no signature check) for `userId`/`exp` is enough for redirect hints, and a tampered cookie just gets rejected upstream on the next call. This is the BFF pattern.
