@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/**
+ * Matchday web theme — Sprint 2 minimal token set.
+ *
+ * Per design #33 §5: only the 6 CSS variables shadcn-ui needs. No brand
+ * palette yet — those come in Sprint 3+.
+ *
+ * Tailwind v4 reads `@theme` blocks directly; no `tailwind.config.ts` is
+ * required. Light theme only for now; dark mode lands when shadcn's theme
+ * toggle does.
+ */
+@theme {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
