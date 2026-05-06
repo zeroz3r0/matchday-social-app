@@ -58,9 +58,7 @@ describe('POST /api/auth/login', () => {
     );
     const { POST } = await loadHandler();
 
-    const res = await POST(
-      makeRequest({ email: 'ana@matchday.app', password: 'Hunter2!' }),
-    );
+    const res = await POST(makeRequest({ email: 'ana@matchday.app', password: 'Hunter2!' }));
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -113,9 +111,7 @@ describe('POST /api/auth/login', () => {
     );
     const { POST } = await loadHandler();
 
-    const res = await POST(
-      makeRequest({ email: 'ana@matchday.app', password: 'wrong' }),
-    );
+    const res = await POST(makeRequest({ email: 'ana@matchday.app', password: 'wrong' }));
 
     expect(res.status).toBe(401);
     const body = await res.json();

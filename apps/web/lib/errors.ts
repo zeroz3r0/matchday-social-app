@@ -28,8 +28,7 @@ const STRING_MESSAGES: Record<string, string> = {
 
   // Legal version mismatches (REQ from api auth.ts)
   TOS_VERSION_MISMATCH: 'Tenés que aceptar la última versión de los Términos.',
-  PRIVACY_VERSION_MISMATCH:
-    'Tenés que aceptar la última versión de la Política de Privacidad.',
+  PRIVACY_VERSION_MISMATCH: 'Tenés que aceptar la última versión de la Política de Privacidad.',
 
   // Rate-limit (forgot-password limiter + future limiters)
   RATE_LIMIT: 'Demasiados intentos. Esperá unos minutos.',

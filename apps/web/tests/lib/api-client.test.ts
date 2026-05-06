@@ -209,10 +209,10 @@ describe('apiFetch', () => {
   it('does NOT mutate cookies on 401 (caller is responsible)', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
     fetchSpy.mockResolvedValue(
-      new Response(
-        JSON.stringify({ success: false, error: { code: 'INVALID_CREDENTIALS' } }),
-        { status: 401, headers: { 'content-type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ success: false, error: { code: 'INVALID_CREDENTIALS' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
     );
     const { apiFetch } = await loadModule();
 

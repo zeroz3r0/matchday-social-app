@@ -13,16 +13,12 @@ import { getSpanishErrorMessage } from '@/lib/errors';
 
 describe('getSpanishErrorMessage', () => {
   it('maps INVALID_CREDENTIALS to wrong email/password message', () => {
-    expect(getSpanishErrorMessage('INVALID_CREDENTIALS')).toBe(
-      'Email o contraseña incorrectos.',
-    );
+    expect(getSpanishErrorMessage('INVALID_CREDENTIALS')).toBe('Email o contraseña incorrectos.');
   });
 
   it('maps EMAIL_TAKEN / DUPLICATE_ENTRY to email-already-registered message', () => {
     expect(getSpanishErrorMessage('EMAIL_TAKEN')).toBe('Este correo ya está registrado.');
-    expect(getSpanishErrorMessage('DUPLICATE_ENTRY')).toBe(
-      'Ya existe una cuenta con esos datos.',
-    );
+    expect(getSpanishErrorMessage('DUPLICATE_ENTRY')).toBe('Ya existe una cuenta con esos datos.');
   });
 
   it('maps VALIDATION_ERROR to revisá-los-datos message', () => {
@@ -39,9 +35,7 @@ describe('getSpanishErrorMessage', () => {
   });
 
   it('maps RATE_LIMIT to a wait message', () => {
-    expect(getSpanishErrorMessage('RATE_LIMIT')).toBe(
-      'Demasiados intentos. Esperá unos minutos.',
-    );
+    expect(getSpanishErrorMessage('RATE_LIMIT')).toBe('Demasiados intentos. Esperá unos minutos.');
   });
 
   it('maps numeric 502 / SERVICE_UNAVAILABLE to upstream-down message', () => {
@@ -65,8 +59,6 @@ describe('getSpanishErrorMessage', () => {
   });
 
   it('is case-insensitive on string codes (defensive)', () => {
-    expect(getSpanishErrorMessage('invalid_credentials')).toBe(
-      'Email o contraseña incorrectos.',
-    );
+    expect(getSpanishErrorMessage('invalid_credentials')).toBe('Email o contraseña incorrectos.');
   });
 });

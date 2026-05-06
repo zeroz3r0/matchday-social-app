@@ -87,15 +87,15 @@ describe('GET /api/auth/me', () => {
 
   it('Scenario WB-S3: forwards Authorization: Bearer to /api/users/me', async () => {
     const exp = 9999999999;
-    const jwt = `h.${Buffer.from(
-      JSON.stringify({ userId: 'u_1', email: 'a@b.com', exp }),
-    ).toString('base64url')}.s`;
+    const jwt = `h.${Buffer.from(JSON.stringify({ userId: 'u_1', email: 'a@b.com', exp })).toString(
+      'base64url',
+    )}.s`;
     cookieStore.get.mockReturnValue({ name: 'matchday_session', value: jwt });
     fetchSpy.mockResolvedValue(
-      new Response(
-        JSON.stringify({ success: true, data: { id: 'u_1', email: 'a@b.com' } }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ success: true, data: { id: 'u_1', email: 'a@b.com' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
     );
     const { GET } = await loadHandler();
 
@@ -113,10 +113,10 @@ describe('GET /api/auth/me', () => {
     ).toString('base64url')}.s`;
     cookieStore.get.mockReturnValue({ name: 'matchday_session', value: jwt });
     fetchSpy.mockResolvedValue(
-      new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED' } }),
-        { status: 401, headers: { 'content-type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
     );
     const { GET } = await loadHandler();
 
@@ -146,9 +146,7 @@ describe('GET /api/auth/me', () => {
       JSON.stringify({ userId: 'u_1', email: 'a@b.com', exp: 9999999999 }),
     ).toString('base64url')}.s`;
     cookieStore.get.mockReturnValue({ name: 'matchday_session', value: jwt });
-    fetchSpy.mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 503 }),
-    );
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({}), { status: 503 }));
     const { GET } = await loadHandler();
 
     const res = await GET(makeRequest());

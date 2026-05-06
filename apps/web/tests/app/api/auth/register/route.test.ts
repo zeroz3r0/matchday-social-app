@@ -132,9 +132,7 @@ describe('POST /api/auth/register', () => {
   });
 
   it('returns 502 on upstream 5xx, no cookie change', async () => {
-    fetchSpy.mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 502 }),
-    );
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({}), { status: 502 }));
     const { POST } = await loadHandler();
 
     const res = await POST(makeRequest(validBody));

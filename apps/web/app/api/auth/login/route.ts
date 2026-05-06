@@ -19,7 +19,12 @@
 import { NextResponse } from 'next/server';
 import { loginSchema } from '@/lib/schemas/auth';
 import { setSessionCookie } from '@/lib/auth';
-import { apiFetch, ApiNetworkError, ApiUnauthorizedError, ApiValidationError } from '@/lib/api-client';
+import {
+  apiFetch,
+  ApiNetworkError,
+  ApiUnauthorizedError,
+  ApiValidationError,
+} from '@/lib/api-client';
 import { getSpanishErrorMessage } from '@/lib/errors';
 
 type UpstreamLoginResponse = {
@@ -37,10 +42,7 @@ export async function POST(req: Request): Promise<Response> {
   try {
     raw = await req.json();
   } catch {
-    return NextResponse.json(
-      { error: getSpanishErrorMessage('INVALID_BODY') },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: getSpanishErrorMessage('INVALID_BODY') }, { status: 400 });
   }
 
   // 2. Validate.

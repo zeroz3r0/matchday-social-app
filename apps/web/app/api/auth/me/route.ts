@@ -18,7 +18,12 @@
  */
 import { NextResponse } from 'next/server';
 import { clearSessionCookie, getSession } from '@/lib/auth';
-import { apiFetch, ApiNetworkError, ApiUnauthorizedError, ApiValidationError } from '@/lib/api-client';
+import {
+  apiFetch,
+  ApiNetworkError,
+  ApiUnauthorizedError,
+  ApiValidationError,
+} from '@/lib/api-client';
 import { getSpanishErrorMessage } from '@/lib/errors';
 
 type UpstreamMeResponse = {
@@ -55,10 +60,7 @@ export async function GET(_req: Request): Promise<Response> {
     if (err instanceof ApiValidationError) {
       // Treat unexpected 4xx as upstream-rejected; clear cookie defensively.
       await clearSessionCookie();
-      return NextResponse.json(
-        { error: getSpanishErrorMessage(err.status) },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: getSpanishErrorMessage(err.status) }, { status: 401 });
     }
     if (err instanceof ApiNetworkError) {
       // REQ-WB-7: 5xx → 502, NO cookie change.

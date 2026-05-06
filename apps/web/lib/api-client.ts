@@ -40,7 +40,7 @@ function resolveApiBaseUrl(): string {
 
 export class ApiNetworkError extends Error {
   readonly status?: number;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
   constructor(message: string, opts: { status?: number; cause?: unknown } = {}) {
     super(message);
     this.name = 'ApiNetworkError';
