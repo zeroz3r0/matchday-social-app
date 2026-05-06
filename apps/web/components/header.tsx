@@ -47,9 +47,7 @@ export async function Header() {
         <div className="flex items-center gap-2">
           {isAuthed ? (
             <>
-              <span className="hidden text-sm text-neutral-600 sm:inline">
-                {session.email}
-              </span>
+              <span className="hidden text-sm text-neutral-600 sm:inline">{session.email}</span>
               <LogoutButton />
             </>
           ) : (

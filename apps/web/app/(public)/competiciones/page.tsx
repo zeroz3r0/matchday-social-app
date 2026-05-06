@@ -19,10 +19,7 @@ import type { Metadata } from 'next';
 
 import { CompetitionCard } from '@/components/competition-card';
 import { publicApiFetch } from '@/lib/api-public';
-import type {
-  CompetitionListResponse,
-  CompetitionListItem,
-} from '@/lib/types/competition';
+import type { CompetitionListResponse, CompetitionListItem } from '@/lib/types/competition';
 
 export const revalidate = 60;
 

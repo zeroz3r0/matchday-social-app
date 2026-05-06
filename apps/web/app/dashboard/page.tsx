@@ -30,9 +30,7 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Bienvenido, {session.email}
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Bienvenido, {session.email}</h1>
         <p className="text-sm text-neutral-600">
           Próximamente: tus partidos, equipos y notificaciones.
         </p>
@@ -40,8 +38,7 @@ export default async function DashboardPage() {
 
       <section className="rounded-lg border border-[var(--color-border)] bg-neutral-50 p-6">
         <p className="text-sm text-neutral-700">
-          Estamos terminando de cocinar el panel principal. Mientras tanto, podés explorar
-          las{' '}
+          Estamos terminando de cocinar el panel principal. Mientras tanto, podés explorar las{' '}
           <a
             href="/competiciones"
             className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"

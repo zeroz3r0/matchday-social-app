@@ -47,8 +47,8 @@ export default function HomePage() {
             Matchday — Fútbol amateur conectado
           </h1>
           <p className="max-w-2xl text-lg text-neutral-600">
-            La plataforma para organizar partidos, ligas y torneos de fútbol amateur F5, F7
-            y F11 con tu club y rivales.
+            La plataforma para organizar partidos, ligas y torneos de fútbol amateur F5, F7 y F11
+            con tu club y rivales.
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <Link

@@ -30,13 +30,7 @@ export function LogoutButton() {
   }
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      onClick={handleClick}
-      disabled={pending}
-    >
+    <Button type="button" variant="outline" size="sm" onClick={handleClick} disabled={pending}>
       {pending ? 'Cerrando sesión…' : 'Cerrar sesión'}
     </Button>
   );

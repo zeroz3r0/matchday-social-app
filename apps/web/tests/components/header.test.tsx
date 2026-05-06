@@ -60,14 +60,8 @@ describe('<Header /> — anonymous', () => {
   it('renders "Iniciar sesión" + "Crear cuenta" CTAs when no session', async () => {
     getSessionMock.mockResolvedValue(null);
     await renderAsync(Header());
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
-      'href',
-      '/login',
-    );
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute(
-      'href',
-      '/registro',
-    );
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/registro');
   });
 
   it('does NOT render "Cerrar sesión" when no session', async () => {

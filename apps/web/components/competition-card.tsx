@@ -65,13 +65,9 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
             <span className="inline-flex items-center rounded-md border border-[var(--color-border)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-neutral-700">
               {typeLabel}
             </span>
-            <span className="text-xs font-semibold text-neutral-500">
-              {competition.gameType}
-            </span>
+            <span className="text-xs font-semibold text-neutral-500">{competition.gameType}</span>
           </div>
-          <h2 className="text-xl font-semibold leading-none tracking-tight">
-            {competition.name}
-          </h2>
+          <h2 className="text-xl font-semibold leading-none tracking-tight">{competition.name}</h2>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm text-neutral-600">
           <p>{competition.city}</p>

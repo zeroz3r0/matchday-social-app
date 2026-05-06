@@ -124,11 +124,7 @@ export function RegisterForm({ tosVersion, privacyVersion }: RegisterFormProps) 
   const errors = form.formState.errors;
 
   return (
-    <form
-      noValidate
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="flex flex-col gap-4"
-    >
+    <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="register-email">Email</Label>
         <Input
@@ -197,10 +193,7 @@ export function RegisterForm({ tosVersion, privacyVersion }: RegisterFormProps) 
         ) : null}
       </div>
 
-      <label
-        htmlFor="register-legal"
-        className="flex items-start gap-2 text-sm text-neutral-700"
-      >
+      <label htmlFor="register-legal" className="flex items-start gap-2 text-sm text-neutral-700">
         <input
           id="register-legal"
           type="checkbox"

@@ -18,8 +18,8 @@ export default function CompetitionNotFound() {
     <main className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-20 text-center">
       <h1 className="text-4xl font-semibold">Competición no encontrada</h1>
       <p className="max-w-md text-neutral-600">
-        Esta competición no existe o ya no está disponible. Echá un vistazo al resto del
-        listado para encontrar otras opciones.
+        Esta competición no existe o ya no está disponible. Echá un vistazo al resto del listado
+        para encontrar otras opciones.
       </p>
       <Link
         href="/competiciones"

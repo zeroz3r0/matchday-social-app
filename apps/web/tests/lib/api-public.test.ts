@@ -15,11 +15,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  publicApiFetch,
-  PublicApiNotFoundError,
-  PublicApiNetworkError,
-} from '@/lib/api-public';
+import { publicApiFetch, PublicApiNotFoundError, PublicApiNetworkError } from '@/lib/api-public';
 
 const ORIGINAL_ENV = process.env.API_BASE_URL;
 
@@ -40,9 +36,7 @@ describe('publicApiFetch', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await publicApiFetch<{ success: true; data: unknown }>(
-      '/api/competitions',
-    );
+    const result = await publicApiFetch<{ success: true; data: unknown }>('/api/competitions');
 
     expect(result).toEqual({ success: true, data: [{ id: 'cmp_1' }] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -71,9 +65,9 @@ describe('publicApiFetch', () => {
 
   it('trims trailing slashes from API_BASE_URL', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app///';
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('{"success":true,"data":{"id":"cmp_1"}}', { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('{"success":true,"data":{"id":"cmp_1"}}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await publicApiFetch('/api/competitions/cmp_1');
@@ -84,9 +78,9 @@ describe('publicApiFetch', () => {
 
   it('forwards { next: { revalidate } } ISR hint to fetch', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('{"success":true,"data":[]}', { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('{"success":true,"data":[]}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await publicApiFetch('/api/competitions', { next: { revalidate: 60 } });
@@ -115,30 +109,23 @@ describe('publicApiFetch', () => {
 
   it('throws PublicApiNetworkError on 500', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 500 })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 500 })));
 
-    await expect(publicApiFetch('/api/competitions')).rejects.toBeInstanceOf(
-      PublicApiNetworkError,
-    );
+    await expect(publicApiFetch('/api/competitions')).rejects.toBeInstanceOf(PublicApiNetworkError);
   });
 
   it('throws PublicApiNetworkError when fetch() itself rejects', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
-    await expect(publicApiFetch('/api/competitions')).rejects.toBeInstanceOf(
-      PublicApiNetworkError,
-    );
+    await expect(publicApiFetch('/api/competitions')).rejects.toBeInstanceOf(PublicApiNetworkError);
   });
 
   it('appends query string when params are provided', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('{"success":true,"data":[]}', { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('{"success":true,"data":[]}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await publicApiFetch('/api/competitions', {
@@ -146,16 +133,14 @@ describe('publicApiFetch', () => {
     });
 
     const [calledUrl] = fetchMock.mock.calls[0]!;
-    expect(calledUrl).toBe(
-      'https://api.matchday.app/api/competitions?city=Madrid&type=LEAGUE',
-    );
+    expect(calledUrl).toBe('https://api.matchday.app/api/competitions?city=Madrid&type=LEAGUE');
   });
 
   it('skips undefined query values without serialising them', async () => {
     process.env.API_BASE_URL = 'https://api.matchday.app';
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('{"success":true,"data":[]}', { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('{"success":true,"data":[]}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     await publicApiFetch('/api/competitions', {
@@ -163,8 +148,6 @@ describe('publicApiFetch', () => {
     });
 
     const [calledUrl] = fetchMock.mock.calls[0]!;
-    expect(calledUrl).toBe(
-      'https://api.matchday.app/api/competitions?city=Madrid&gameType=F7',
-    );
+    expect(calledUrl).toBe('https://api.matchday.app/api/competitions?city=Madrid&gameType=F7');
   });
 });

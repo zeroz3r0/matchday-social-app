@@ -83,8 +83,7 @@ export function LoginForm() {
       return;
     }
 
-    const target =
-      sanitizeRedirect(searchParams.get('redirect')) ?? '/dashboard';
+    const target = sanitizeRedirect(searchParams.get('redirect')) ?? '/dashboard';
     router.push(target);
     router.refresh();
   }
@@ -93,11 +92,7 @@ export function LoginForm() {
   const passwordError = form.formState.errors.password?.message;
 
   return (
-    <form
-      noValidate
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="flex flex-col gap-4"
-    >
+    <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="login-email">Email</Label>
         <Input

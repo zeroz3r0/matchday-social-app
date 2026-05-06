@@ -17,15 +17,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import {
-  publicApiFetch,
-  PublicApiNetworkError,
-  PublicApiNotFoundError,
-} from '@/lib/api-public';
-import type {
-  CompetitionDetail,
-  CompetitionDetailResponse,
-} from '@/lib/types/competition';
+import { publicApiFetch, PublicApiNetworkError, PublicApiNotFoundError } from '@/lib/api-public';
+import type { CompetitionDetail, CompetitionDetailResponse } from '@/lib/types/competition';
 
 export const revalidate = 60;
 
@@ -116,13 +109,9 @@ export default async function CompetitionDetailPage({
           <span className="inline-flex items-center rounded-md border border-[var(--color-border)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-neutral-700">
             {typeLabel}
           </span>
-          <span className="text-xs font-semibold text-neutral-500">
-            {competition.gameType}
-          </span>
+          <span className="text-xs font-semibold text-neutral-500">{competition.gameType}</span>
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          {competition.name}
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{competition.name}</h1>
         <p className="text-sm text-neutral-600">
           {competition.city}
           {startLabel ? ` · ${startLabel}` : ''}
@@ -133,17 +122,13 @@ export default async function CompetitionDetailPage({
       {competition.description ? (
         <section>
           <h2 className="mb-2 text-lg font-semibold">Descripción</h2>
-          <p className="whitespace-pre-line text-neutral-700">
-            {competition.description}
-          </p>
+          <p className="whitespace-pre-line text-neutral-700">{competition.description}</p>
         </section>
       ) : null}
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">Organizador</h2>
-        <p className="text-neutral-700">
-          {competition.createdBy.nickname || 'Usuario eliminado'}
-        </p>
+        <p className="text-neutral-700">{competition.createdBy.nickname || 'Usuario eliminado'}</p>
       </section>
 
       <section>

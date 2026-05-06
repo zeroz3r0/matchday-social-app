@@ -46,9 +46,7 @@ const sampleTournament: CompetitionListItem = {
 describe('<CompetitionCard>', () => {
   it('renders the competition name as a heading', () => {
     render(<CompetitionCard competition={sampleLeague} />);
-    expect(
-      screen.getByRole('heading', { name: 'Liga del Barrio Chamberí' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Liga del Barrio Chamberí' })).toBeInTheDocument();
   });
 
   it('renders city + Spanish type label "Liga" + gameType for a LEAGUE', () => {
