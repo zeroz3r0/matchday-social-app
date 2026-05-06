@@ -16,13 +16,11 @@ import { NextRequest } from 'next/server';
 
 function makeRequest(pathname: string, opts: { hasCookie?: boolean } = {}): NextRequest {
   const url = new URL(`https://web.matchday.app${pathname}`);
-  const headers = new Headers();
+  const req = new NextRequest(new Request(url, { method: 'GET' }));
   if (opts.hasCookie) {
-    headers.set('cookie', 'matchday_session=fake-jwt');
+    req.cookies.set('matchday_session', 'fake-jwt');
   }
-  // NextRequest accepts a Request-like object; the `Request` constructor
-  // requires a method. Default GET.
-  return new NextRequest(new Request(url, { method: 'GET', headers }));
+  return req;
 }
 
 describe('middleware', () => {
