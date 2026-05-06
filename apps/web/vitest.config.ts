@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 /**
@@ -13,6 +14,7 @@ import path from 'node:path';
  * runner is the same Vitest used by shared + api.
  */
 export default defineConfig({
+  plugins: [react()],
   test: {
     environment: 'happy-dom',
     globals: true,
