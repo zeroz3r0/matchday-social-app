@@ -21,9 +21,7 @@ export function Card({ className, ref, ...props }: DivProps) {
 }
 
 export function CardHeader({ className, ref, ...props }: DivProps) {
-  return (
-    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
-  );
+  return <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />;
 }
 
 export function CardTitle({ className, ref, ...props }: DivProps) {
@@ -45,7 +43,5 @@ export function CardContent({ className, ref, ...props }: DivProps) {
 }
 
 export function CardFooter({ className, ref, ...props }: DivProps) {
-  return (
-    <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
-  );
+  return <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />;
 }

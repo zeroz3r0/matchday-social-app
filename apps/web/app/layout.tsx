@@ -13,8 +13,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Matchday',
-  description:
-    'Red social deportiva para gestionar partidos, ligas y torneos de fútbol amateur.',
+  description: 'Red social deportiva para gestionar partidos, ligas y torneos de fútbol amateur.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
