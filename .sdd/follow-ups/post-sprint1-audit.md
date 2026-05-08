@@ -47,15 +47,35 @@
 
 ## Status summary as of 2026-05-06
 
-| #   | Title                      | Status                       | Closed by                          |
-| --- | -------------------------- | ---------------------------- | ---------------------------------- |
-| 1   | cron `start()` cleanup     | ✅ closed                    | PR #14                             |
-| 2   | overrides syntax docs      | ✅ closed                    | PR #15                             |
-| 3   | Expo SDK 56 + tighten gate | 🟡 partial (gate via PR #20) | PR #20 (gate); issue #16 (SDK 56)  |
-| 4   | replace markdown-it lib    | ✅ closed                    | PR #19                             |
+| #   | Title                      | Status                       | Closed by                         |
+| --- | -------------------------- | ---------------------------- | --------------------------------- |
+| 1   | cron `start()` cleanup     | ✅ closed                    | PR #14                            |
+| 2   | overrides syntax docs      | ✅ closed                    | PR #15                            |
+| 3   | Expo SDK 56 + tighten gate | 🟡 partial (gate via PR #20) | PR #20 (gate); issue #16 (SDK 56) |
+| 4   | replace markdown-it lib    | ✅ closed                    | PR #19                            |
 
 This file can be archived to `.sdd/archive/post-sprint1-audit-hardening/80-followups-resolution.md` once PR #20 merges and the Expo SDK 56 bump (remaining half of issue #16) is resolved or formally deferred indefinitely.
 
 ## User-driven (not in this list because it's operational, not a code change)
 
 - **Manual smoke test of push notifications** (PR #11). Requires: real device, `EXPO_PUBLIC_PROJECT_ID` set, Expo dev client. Walks through the 6-step list in PR #11's "Manual smoke" section. Still pending user execution.
+
+---
+
+## Sprint 2 Phase 4 wrap-up (2026-05-08)
+
+The following items surfaced during Phase 4 verification and are tracked as labeled GitHub issues:
+
+| Issue | Title                                                    | Severity    |
+| ----- | -------------------------------------------------------- | ----------- |
+| #25   | Page-level tests for `apps/web/app/**`                   | enhancement |
+| #26   | Retrofit RED-before-GREEN TDD for `RegisterForm`         | enhancement |
+| #27   | Tighten archive sub-agent prompt to run `npm run format` | enhancement |
+
+Detailed session log: [`.sdd/sessions/2026-05-08-sprint2-phase4-ship.md`](../sessions/2026-05-08-sprint2-phase4-ship.md).
+
+After PR #24 merges, the next session should:
+
+1. Generate `.sdd/archive/web-bootstrap/` consolidating PRs #22 (Phase 1), #23 (Phase 3), #24 (Phase 4).
+2. Add `.sdd/active-specs/web-bootstrap.md` capturing the cross-phase capability spec.
+3. Drop the `wip-feat-enable-web-target-pre-sprint2-sync` local stash if no longer needed.
