@@ -137,12 +137,12 @@ The web app NEVER holds the API JWT in JavaScript. All auth flows go through Nex
 
 ### Endpoints
 
-| Method | Path                  | Purpose                                                        |
-| ------ | --------------------- | -------------------------------------------------------------- |
-| POST   | `/api/auth/login`     | Validate Zod → forward to API → set `matchday_session` cookie  |
-| POST   | `/api/auth/register`  | Same as login + accepts ToS / Privacy versions                 |
-| POST   | `/api/auth/logout`    | Clear cookie (`Max-Age=0`); NO upstream call (API has no /logout) |
-| GET    | `/api/auth/me`        | Read cookie → proxy to `/api/users/me` with Bearer JWT         |
+| Method | Path                 | Purpose                                                           |
+| ------ | -------------------- | ----------------------------------------------------------------- |
+| POST   | `/api/auth/login`    | Validate Zod → forward to API → set `matchday_session` cookie     |
+| POST   | `/api/auth/register` | Same as login + accepts ToS / Privacy versions                    |
+| POST   | `/api/auth/logout`   | Clear cookie (`Max-Age=0`); NO upstream call (API has no /logout) |
+| GET    | `/api/auth/me`       | Read cookie → proxy to `/api/users/me` with Bearer JWT            |
 
 ### Cookie shape (REQ-WB-2)
 

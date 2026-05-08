@@ -47,12 +47,12 @@
 
 ## Status summary as of 2026-05-06
 
-| #   | Title                      | Status                       | Closed by                          |
-| --- | -------------------------- | ---------------------------- | ---------------------------------- |
-| 1   | cron `start()` cleanup     | ✅ closed                    | PR #14                             |
-| 2   | overrides syntax docs      | ✅ closed                    | PR #15                             |
-| 3   | Expo SDK 56 + tighten gate | 🟡 partial (gate via PR #20) | PR #20 (gate); issue #16 (SDK 56)  |
-| 4   | replace markdown-it lib    | ✅ closed                    | PR #19                             |
+| #   | Title                      | Status                       | Closed by                         |
+| --- | -------------------------- | ---------------------------- | --------------------------------- |
+| 1   | cron `start()` cleanup     | ✅ closed                    | PR #14                            |
+| 2   | overrides syntax docs      | ✅ closed                    | PR #15                            |
+| 3   | Expo SDK 56 + tighten gate | 🟡 partial (gate via PR #20) | PR #20 (gate); issue #16 (SDK 56) |
+| 4   | replace markdown-it lib    | ✅ closed                    | PR #19                            |
 
 This file can be archived to `.sdd/archive/post-sprint1-audit-hardening/80-followups-resolution.md` once PR #20 merges and the Expo SDK 56 bump (remaining half of issue #16) is resolved or formally deferred indefinitely.
 
